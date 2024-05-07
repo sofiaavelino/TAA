@@ -88,6 +88,7 @@ class DCEL {
             v.leaving = edge;
             addVertex(v);
             addEdge(edge);
+            addEdge(twinEdge);
             externalEdges.add(edge);
         }
 
@@ -111,30 +112,20 @@ class DCEL {
 
     public void iterateThroughEdges() {
         System.out.println("Pontos de cada edge:");
-        HalfEdge h = halfEdges.get(0);
-        HalfEdge h1 = null;
+        for (int i=0; i<halfEdges.size()/2; i++) {
+            HalfEdge h = halfEdges.get(2*i);
+            HalfEdge h1 = null;
 
-        System.out.println("Fist cycle");
+            System.out.println("\n" + (i+1) + "th cycle");
 
-        while (h != h1) { 
-            h1 = halfEdges.get(0);
-            //System.out.println(h);
-            System.out.println("Origin: (" + h.origin.x + ", " + h.origin.y + ")");
-            System.out.println("Twin Origin: (" + h.twin.origin.x + ", " + h.twin.origin.y + ")");
-            h = h.next;
-        }
-
-        h1 = null;
-        h = halfEdges.get(9);
-
-        System.out.println("\nSecond cycle");
-
-        while (h != h1) { 
-            h1 = halfEdges.get(9);
-            //System.out.println(h);
-            System.out.println("Origin: (" + h.origin.x + ", " + h.origin.y + ")");
-            System.out.println("Twin Origin: (" + h.twin.origin.x + ", " + h.twin.origin.y + ")");
-            h = h.next;
+            while (h != h1) { 
+                h1 = halfEdges.get(2*i);
+                System.out.println("Origin: (" + h.origin.x + ", " + h.origin.y + ")");
+                //System.out.println(h.incidentFace);
+                System.out.println("Twin Origin: (" + h.twin.origin.x + ", " + h.twin.origin.y + ")");
+                //System.out.println(h.twin.incidentFace);
+                h = h.next;
+            }
         }
     }
 
@@ -284,8 +275,12 @@ class DCEL {
                 }
                 else {
                     f = nexth.twin.incidentFace;
+                    nexth.twin.next = h_twin; 
+                    h_twin.prev = nexth.twin;
                 }
                 h = h_twin;
+                prev = nexth.twin;
+                next = h;
 
                 addEdge(nexth);
                 addEdge(h_twin);
@@ -311,10 +306,13 @@ public class TAA_proj {
         DCEL dcel = new DCEL();
         dcel.createDCELFromPolygon(vertices);
 
-        Vertex origin = new Vertex(0.0, 1.0);
-        Vertex end = new Vertex(3.0, 2.0);
+        Vertex origin1 = new Vertex(0.0, 1.0);
+        Vertex end1 = new Vertex(3.0, 2.0);
+        Vertex origin2 = new Vertex(0.0, 2.0);
+        Vertex end2 = new Vertex(3.0, 1.0);
 
-        dcel.addPartition(origin, end);
+        dcel.addPartition(origin1, end1);
+        dcel.addPartition(origin2, end2);
         dcel.iterateThroughEdges();
     }
 }
