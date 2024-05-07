@@ -48,7 +48,7 @@ class DCEL {
     }
 
     // Method to add a new edge to the DCEL
-    public void addEdge(Edge e) {
+    public void addEdge(HalfEdge e) {
         halfEdges.add(e);
     }
 
@@ -77,7 +77,7 @@ class DCEL {
             edges[i] = edge;
             v.leaving = edge;
             addVertex(v);
-            addHalfEdge(edge);
+            addEdge(edge);
         }
 
         // Linking next and previous half-edges
@@ -89,16 +89,6 @@ class DCEL {
         // Set outer component for the face
         face.outerComponent = edges[0];
         facesArray[0] = face;
-
-        // Add vertexes to DCEL
-        for (Vertex v : polygonVertices) {
-            addVertex(f);
-        }
-
-        // Add edges to DCEL
-        for (HalfEdge e : edges) {
-            addEdge(f);
-        }
 
         // Add faces to DCEL
         for (Face f : facesArray) {
