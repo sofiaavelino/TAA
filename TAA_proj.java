@@ -139,7 +139,7 @@ class DCEL {
         if (m1 == m2) {return null;}
 
         if (Double.isInfinite(m2)) {
-            if ((m1 * v3.x + b1) < Math.max(v4.y,v3.y) && (m1 * v3.x + b1) > Math.min(v4.y,v3.y)) {
+            if ((m1 * v3.x + b1) <= Math.max(v4.y,v3.y) && (m1 * v3.x + b1) >= Math.min(v4.y,v3.y)) {
                 Vertex i = new Vertex(v3.x, m1 * v3.x + b1);
                 return i;
             }
@@ -149,7 +149,7 @@ class DCEL {
         }
 
         else if (Double.isInfinite(m1)) {
-            if ((m2 * v1.x + b2) < Math.max(v1.y,v2.y) && (m2 * v1.x + b2) > Math.min(v1.y,v2.y)) {
+            if ((m2 * v1.x + b2) <= Math.max(v1.y,v2.y) && (m2 * v1.x + b2) >= Math.min(v1.y,v2.y)) {
                 Vertex i = new Vertex(v1.x, m2 * v1.x + b2);
                 return i;
             }
@@ -230,7 +230,7 @@ class DCEL {
         HalfEdge next = h; //so we can add pointer later
         h = h.next;
 
-        while (intersection.x != end.x && intersection.y != end.y) {
+        while (intersection.x != end.x || intersection.y != end.y) {
             Vertex i = intersection(origin, end, h.origin, h.next.origin);
 
             if (i != null) {
@@ -308,12 +308,11 @@ public class TAA_proj {
 
         Vertex origin1 = new Vertex(0.0, 1.0);
         Vertex end1 = new Vertex(3.0, 2.0);
-        Vertex origin2 = new Vertex(0.0, 2.0);
-        Vertex end2 = new Vertex(3.0, 1.0);
+        Vertex origin2 = new Vertex(1.5, 3.0);
+        Vertex end2 = new Vertex(1.5, 0.0);
 
         dcel.addPartition(origin1, end1);
         dcel.addPartition(origin2, end2);
         dcel.iterateThroughEdges();
     }
 }
-
