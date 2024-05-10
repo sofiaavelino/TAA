@@ -30,6 +30,12 @@ public class TAA_proj {
         dcel.iterateThroughEdges();
     }
 
+    /*
+     * TODO:
+     * LINHAS:
+     * -55
+     * -97
+     */
     public static List<Face> computeVisibility(Vertex v, Face face) {
         List<Face> visibilityRegion = new ArrayList<>();
         Queue<Face> queue = new LinkedList<>();
@@ -44,7 +50,51 @@ public class TAA_proj {
             if (!currentFace.visited) {
                 currentFace.markAsVisited();
                 int quadrant = currentFace.getQuadrant(v);
-                // directions
+                double d1 = currentFace.centroid.x - v.x;
+                double d2 = currentFace.centroid.y - v.y;
+                // visiblePiece();
+                currentFace.markAsVisited();
+                Face esquerda, baixo, cima, direita;
+                if (currentFace.outerComponent.origin.x == currentFace.outerComponent.origin.next.x) {
+                    if (currentFace.outerComponent.origin.y < currentFace.outerComponent.origin.next.y) { // vertical
+                                                                                                          // esquerda
+                        esquerda = currentFace.outerComponent.twin.incidentFace;
+                        cima = currentFace.outerComponent.next.twin.incidentFace;
+                        direita = currentFace.outerComponent.next.next.twin.incidentFace;
+                        baixo = currentFace.outerComponent.next.next.next.twin.incidentFace;
+                    } else {// direita
+                        direita = currentFace.outerComponent.twin.incidentFace;
+                        baixo = currentFace.outerComponent.next.twin.incidentFace;
+                        esquerda = currentFace.outerComponent.next.next.twin.incidentFace;
+                        cima = currentFace.outerComponent.next.next.next.twin.incidentFace;
+                    }
+                } else {
+                    if (currentFace.outerComponent.origin.x < currentFace.outerComponent.origin.next.x) { // horizontal
+                                                                                                          // de cima
+                        cima = currentFace.outerComponent.twin.incidentFace;
+                        direita = currentFace.outerComponent.next.twin.incidentFace;
+                        baixo = currentFace.outerComponent.next.next.twin.incidentFace;
+                        esquerda = currentFace.outerComponent.next.next.next.twin.incidentFace;
+                    } else {// baixo
+                        baixo = currentFace.outerComponent.twin.incidentFace;
+                        esquerda = currentFace.outerComponent.next.twin.incidentFace;
+                        cima = currentFace.outerComponent.next.next.twin.incidentFace;
+                        direita = currentFace.outerComponent.next.next.next.twin.incidentFace;
+                    }
+                }
+
+                if (d2 > d1) { // determinar a prox face a analisar dependendo das direcoes
+                    if ((-d2) < 0)
+                        queue.add(baixo);
+                    else
+                        queue.add(cima);
+                } else {
+                    if ((-d1) < 0)
+                        queue.add(esquerda);
+                    else
+                        queue.add(direita);
+                }
+                // identificar edge que a face partilha com q e ver se o modem a consegue ver
             }
         }
 
@@ -155,6 +205,14 @@ class Face {
             else // lower right
                 return 4;
         }
+    }
+
+    public Vertex getDirections(Vertex modem) { // retorna um vertice mas na verdade sao direções, cuidado para nao usar
+                                                // para um vertice mesmo
+        Vertex result = centroid;
+        result.x -= modem.x;
+        result.y -= modem.y;
+        return result;
     }
 }
 
