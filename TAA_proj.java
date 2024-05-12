@@ -1,9 +1,5 @@
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
-
-import java.awt.geom.Line2D;
 import java.lang.Math;
 
 class Vertex {
@@ -149,7 +145,6 @@ class DCEL {
             }
         }
 
-        //System.out.println("b" + v3.x + " " + v4.x);
         if (v4.x == v3.x) {
             if ((m1 * v3.x + b1) <= Math.max(v4.y,v3.y) && (m1 * v3.x + b1) >= Math.min(v4.y,v3.y)) {
                 Vertex i = new Vertex(v3.x, m1 * v3.x + b1);
@@ -179,14 +174,10 @@ class DCEL {
         Face f = null;
         for (HalfEdge e : externalEdges) {
             Vertex i = intersection(origin, end, e.origin, e.next.origin);
-            if (i!= null) {System.out.println(origin.x + " " + origin.y);
-        System.out.println(i.x + " " + i.y);}
             if (i != null && i.x == origin.x && i.y == origin.y) {
                 h = e;
             }
         }
-
-        System.out.println(h.origin.x + " " + h.origin.y);
 
         HalfEdge prev = h; //so we can add pointer later
 
@@ -291,12 +282,6 @@ class DCEL {
                     h = h_twin;
                 }
                 else {
-                    System.out.println("this");
-                    newh_twin.incidentFace = prev.incidentFace;
-                    System.out.println(prev.origin.x + " " + prev.origin.y);
-                    System.out.println(newh_twin.origin.x + " " + newh_twin.origin.y);
-                    System.out.println(h.next.origin.x + " " + h.next.origin.y);
-                    System.out.println(newh.origin.x + " " + newh.origin.y);
 
                     newh_twin.prev = prev;
                     prev.next = newh_twin;
@@ -312,6 +297,7 @@ class DCEL {
                     next.prev = newh;
 
                     prev = h;
+
                     h = h.twin;
                 
                 }
