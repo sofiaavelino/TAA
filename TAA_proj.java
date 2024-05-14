@@ -26,9 +26,11 @@ class HalfEdge {
 
 class Face {
     HalfEdge outerComponent; // reference to one of the half-edges that bound the face
+    int counter;
 
-    public Face(HalfEdge outerComponent) {
+    public Face(HalfEdge outerComponent, int counter) {
         this.outerComponent = outerComponent;
+        this.counter = counter;
     }
 }
 
@@ -69,9 +71,8 @@ class DCEL {
     public void createDCELFromPolygon(Vertex[] polygonVertices) {
         int n = polygonVertices.length;
         HalfEdge[] edges = new HalfEdge[n];
-        Face face = new Face(null);
-        Face outerFace = new Face (null);
-        Face[] facesArray = new Face[n];
+        Face face = new Face(null, 1);
+        Face outerFace = new Face (null, 0);
 
         // Create half-edges and vertices
         for (int i = 0; i < n; i++) {
@@ -101,12 +102,9 @@ class DCEL {
 
         // Set outer component for the face
         face.outerComponent = edges[0];
-        facesArray[0] = face;
 
-        // Add faces to DCEL
-        for (Face f : facesArray) {
-            addFace(f);
-        }
+        addFace(face);
+        addFace(outerFace);
     }
 
     public void iterateThroughEdges() {
@@ -120,9 +118,9 @@ class DCEL {
             while (h != h1) { 
                 h1 = halfEdges.get(2*i);
                 System.out.println("Origin: (" + h.origin.x + ", " + h.origin.y + ")");
-                //System.out.println(h.incidentFace);
+                System.out.println("Orgin face: f" + h.incidentFace.counter);
                 System.out.println("Twin Origin: (" + h.twin.origin.x + ", " + h.twin.origin.y + ")");
-                //System.out.println(h.twin.incidentFace);
+                System.out.println("Twin face: f" + h.twin.incidentFace.counter);
                 h = h.next;
             }
         }
@@ -136,8 +134,8 @@ class DCEL {
 
         //check if one vertical
         if (v2.x == v1.x) {
-            if ((m2 * v1.x + b2) <= Math.max(v1.y,v2.y) && (m2 * v1.x + b2) >= Math.min(v1.y,v2.y)) {
-                Vertex i = new Vertex(v1.x, m2 * v1.x + b2);
+            Vertex i = new Vertex(v1.x, m2 * v1.x + b2);
+            if (i.x <= Math.min(Math.max(v1.x,v2.x), Math.max(v3.x,v4.x)) && i.x >= Math.max(Math.min(v1.x,v2.x), Math.min(v3.x,v4.x)) && i.y <= Math.min(Math.max(v1.y,v2.y), Math.max(v3.y,v4.y)) && i.y >= Math.max(Math.min(v1.y,v2.y), Math.min(v3.y,v4.y))) {
                 return i;
             }
             else {
@@ -146,8 +144,8 @@ class DCEL {
         }
 
         if (v4.x == v3.x) {
-            if ((m1 * v3.x + b1) <= Math.max(v4.y,v3.y) && (m1 * v3.x + b1) >= Math.min(v4.y,v3.y)) {
-                Vertex i = new Vertex(v3.x, m1 * v3.x + b1);
+            Vertex i = new Vertex(v3.x, m1 * v3.x + b1);
+            if (i.x <= Math.min(Math.max(v1.x,v2.x), Math.max(v3.x,v4.x)) && i.x >= Math.max(Math.min(v1.x,v2.x), Math.min(v3.x,v4.x)) && i.y <= Math.min(Math.max(v1.y,v2.y), Math.max(v3.y,v4.y)) && i.y >= Math.max(Math.min(v1.y,v2.y), Math.min(v3.y,v4.y))) {
                 return i;
             }
             else {
@@ -182,7 +180,7 @@ class DCEL {
         HalfEdge prev = h; //so we can add pointer later
 
         if (h.origin.x == origin.x && h.origin.y == origin.y) {
-            f = new Face(h);
+            f = new Face(h, faces.size());
             h.incidentFace = f;
             addFace(f);
             prev = h.prev;
@@ -190,7 +188,7 @@ class DCEL {
         
         else if (h.next.origin.x == origin.x && h.next.origin.y == origin.y) {
             h = h.next;
-            f = new Face(h);
+            f = new Face(h, faces.size());
             h.incidentFace = f;
             addFace(f);
         }
@@ -209,7 +207,7 @@ class DCEL {
             nexth_twin.next = h.twin; 
             h.twin.prev = nexth_twin; 
 
-            f = new Face(nexth);
+            f = new Face(nexth, faces.size());
             nexth.incidentFace = f;
             nexth_twin.incidentFace = h.twin.incidentFace;
             nexth.twin = nexth_twin;
@@ -218,6 +216,9 @@ class DCEL {
             addEdge(nexth);
             addEdge(nexth_twin);
             addFace(f);
+
+            System.out.println(nexth.origin.x + " " + nexth.origin.y);
+            System.out.println(nexth.incidentFace.counter);
 
             h = nexth;
         }
@@ -231,6 +232,7 @@ class DCEL {
 
             if (i != null) {
                 intersection = i;
+                System.out.println(i.x + " " + i.y);
                 addVertex(i); //check if vertex doesnt exist yet
                 h.incidentFace = f;
                 HalfEdge newh = new HalfEdge(i);
@@ -268,8 +270,8 @@ class DCEL {
                     newh_twin.twin = newh;
                     newh.twin = newh_twin;
 
-                    if (nexth.twin.incidentFace.outerComponent != null) {
-                        f = new Face(h_twin);
+                    if (nexth.twin.incidentFace.counter != 0) { //check if next is outer face
+                        f = new Face(h_twin, faces.size());
                         addFace(f);
                     }
                     else {
@@ -284,6 +286,7 @@ class DCEL {
                 else {
 
                     newh_twin.prev = prev;
+                    newh_twin.incidentFace = prev.incidentFace;
                     prev.next = newh_twin;
                     newh_twin.next = h.next;
                     h.next.prev = newh_twin;
@@ -298,44 +301,55 @@ class DCEL {
 
                     prev = h;
 
+                    f = h.twin.incidentFace;
                     h = h.twin;
-                
                 }
 
                 next = h;
                 addEdge(newh);
                 addEdge(newh_twin);
             }
-            
+
             h.incidentFace = f;
             h = h.next;
         }
+
+        /*for (HalfEdge e : halfEdges) {
+            System.out.println(e.origin.x + " " + e.origin.y);
+            System.out.println(e.next.origin.x + " " + e.next.origin.y);
+            System.out.println(e.incidentFace.counter);
+        }*/
     }
 }
 
 public class TAA_proj {
 
     public static void main(String[] args) {
-        Vertex[] vertices = new Vertex[6];
-        vertices[0] = new Vertex(0.0, 0.0);
-        vertices[1] = new Vertex(3.0, 0.0);
-        vertices[2] = new Vertex(3.0, 3.0);
-        vertices[3] = new Vertex(6.0, 3.0);
-        vertices[4] = new Vertex(6.0, 6.0);
-        vertices[5] = new Vertex(0.0, 6.0);
+        Vertex[] vertices = new Vertex[12];
+        vertices[0] = new Vertex(2.0, 1.0);
+        vertices[1] = new Vertex(4.0, 1.0);
+        vertices[2] = new Vertex(4.0, 2.0);
+        vertices[3] = new Vertex(6.0, 2.0);
+        vertices[4] = new Vertex(6.0, 4.0);
+        vertices[5] = new Vertex(5.0, 4.0);
+        vertices[6] = new Vertex(5.0, 6.0);
+        vertices[7] = new Vertex(3.0, 6.0);
+        vertices[8] = new Vertex(3.0, 5.0);
+        vertices[9] = new Vertex(1.0, 5.0);
+        vertices[10] = new Vertex(1.0, 3.0);
+        vertices[11] = new Vertex(2.0, 3.0);
 
         DCEL dcel = new DCEL();
         dcel.createDCELFromPolygon(vertices);
 
-        Vertex origin1 = new Vertex(3.0, 3.0);
-        Vertex end1 = new Vertex(3.0, 6.0);
-        Vertex origin2 = new Vertex(0.0, 3.0);
-        Vertex end2 = new Vertex(3.0, 3.0);
+        Vertex origin1 = new Vertex(3.0, 5.0);
+        Vertex end1 = new Vertex(5.0, 5.0);
+        Vertex origin2 = new Vertex(2.0, 5.0);
+        Vertex end2 = new Vertex(2.0, 3.0);
 
         dcel.addPartition(origin1, end1);
         dcel.addPartition(origin2, end2);
         dcel.iterateThroughEdges();
     }
-
 
 }
