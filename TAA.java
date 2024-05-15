@@ -8,14 +8,33 @@ import java.util.function.Function;
 import java.awt.geom.Line2D;
 import java.lang.Math;
 
-public class TAA_proj {
-
+public class TAA {
     public static void main(String[] args) {
-        Vertex[] vertices = new Vertex[4];
+        Vertex[] vertices = new Vertex[24];
         vertices[0] = new Vertex(0.0, 0.0);
         vertices[1] = new Vertex(3.0, 0.0);
-        vertices[2] = new Vertex(3.0, 3.0);
-        vertices[3] = new Vertex(0.0, 3.0);
+        vertices[2] = new Vertex(3.0, 1.0);
+        vertices[3] = new Vertex(4.0, 1.0);
+        vertices[4] = new Vertex(4.0, 0.0);
+        vertices[5] = new Vertex(6.0, 0.0);
+        vertices[6] = new Vertex(6.0, 2.0);
+        vertices[7] = new Vertex(5.0, 2.0);
+        vertices[8] = new Vertex(5.0, 3.0);
+        vertices[9] = new Vertex(7.0, 3.0);
+        vertices[10] = new Vertex(7.0, 5.0);
+        vertices[11] = new Vertex(4.0, 5.0);
+        vertices[12] = new Vertex(4.0, 6.0);
+        vertices[13] = new Vertex(7.0, 6.0);
+        vertices[14] = new Vertex(7.0, 9.0);
+        vertices[15] = new Vertex(6.0, 9.0);
+        vertices[16] = new Vertex(6.0, 10.0);
+        vertices[17] = new Vertex(4.0, 10.0);
+        vertices[18] = new Vertex(4.0, 9.0);
+        vertices[19] = new Vertex(1.0, 9.0);
+        vertices[20] = new Vertex(1.0, 6.0);
+        vertices[21] = new Vertex(2.0, 6.0);
+        vertices[22] = new Vertex(2.0, 4.0);
+        vertices[23] = new Vertex(0.0, 4.0);
 
         DCEL dcel = new DCEL();
         dcel.createDCELFromPolygon(vertices);
@@ -53,7 +72,7 @@ public class TAA_proj {
                 double d1 = currentFace.centroid.x - v.x;
                 double d2 = currentFace.centroid.y - v.y;
                 // visiblePiece();
-                currentFace.markAsVisited();
+                currentFace.markAsVisible();
                 Face esquerda, baixo, cima, direita;
                 if (currentFace.outerComponent.origin.x == currentFace.outerComponent.origin.next.x) {
                     if (currentFace.outerComponent.origin.y < currentFace.outerComponent.origin.next.y) { // vertical
@@ -313,6 +332,17 @@ class DCEL {
         }
     }
 
+    public int edgeVisibility(Vertex modem, HalfEdge targetEdge) {
+        Vertex p1 = targetEdge.origin;
+        Vertex p2 = targetEdge.next.origin;
+        int count = 0;
+        for (HalfEdge edge : halfEdges) {
+            if (intersection(edge.origin, edge.next.origin, p1, p2) != null)
+                count++;
+        }
+        return count;
+    }
+
     public Vertex intersection(Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
         double m1 = (v2.y - v1.y) / (v2.x - v1.x);
         double m2 = (v4.y - v3.y) / (v4.x - v3.x);
@@ -363,22 +393,24 @@ class DCEL {
         HalfEdge h = null;
         Face f = null;
         for (HalfEdge e : externalEdges) {
-            if (intersection(origin, end, e.origin, e.next.origin) != null) {
+            Vertex i = intersection(origin, end, e.origin, e.next.origin);
+            if (i != null && i.x == origin.x && i.y == origin.y) {
                 h = e;
             }
         }
 
         HalfEdge prev = h; // so we can add pointer later
 
-        if (h.origin == origin) {
-            f = new Face(h);
+        if (h.origin.x == origin.x && h.origin.y == origin.y) {
+            f = new Face(h, faces.size());
             h.incidentFace = f;
             addFace(f);
+            prev = h.prev;
         }
 
-        else if (h.next.origin == origin) {
+        else if (h.next.origin.x == origin.x && h.next.origin.y == origin.y) {
             h = h.next;
-            f = new Face(h);
+            f = new Face(h, faces.size());
             h.incidentFace = f;
             addFace(f);
         }
@@ -397,7 +429,7 @@ class DCEL {
             nexth_twin.next = h.twin;
             h.twin.prev = nexth_twin;
 
-            f = new Face(nexth);
+            f = new Face(nexth, faces.size());
             nexth.incidentFace = f;
             nexth_twin.incidentFace = h.twin.incidentFace;
             nexth.twin = nexth_twin;
@@ -406,6 +438,9 @@ class DCEL {
             addEdge(nexth);
             addEdge(nexth_twin);
             addFace(f);
+
+            System.out.println(nexth.origin.x + " " + nexth.origin.y);
+            System.out.println(nexth.incidentFace.counter);
 
             h = nexth;
         }
@@ -419,54 +454,78 @@ class DCEL {
 
             if (i != null) {
                 intersection = i;
-                addVertex(i);
+                System.out.println(i.x + " " + i.y);
+                addVertex(i); // check if vertex doesnt exist yet
                 h.incidentFace = f;
-
-                HalfEdge nexth = new HalfEdge(i); // add halfedge above intersection point
-                nexth.incidentFace = prev.incidentFace;
-                nexth.next = h.next;
-                h.next.prev = nexth;
-
-                HalfEdge h_twin = new HalfEdge(i); // add twin halfedge to h (below intersection point)
-                h_twin.next = h.twin.next;
-                h.twin.next.prev = h_twin;
-                h.twin.next = null; // to be set later
-                h_twin.prev = null; // to be set later
-                nexth.twin = h.twin;
-                h.twin.twin = nexth;
-                h.twin = h_twin;
-                h_twin.twin = h;
-
                 HalfEdge newh = new HalfEdge(i);
-                newh.incidentFace = f;
-                h.next = newh;
-                newh.prev = h;
-                newh.next = next;
-                next.prev = newh;
-
                 HalfEdge newh_twin = new HalfEdge(next.origin);
-                newh_twin.incidentFace = prev.incidentFace;
-                newh_twin.prev = prev;
-                prev.next = newh_twin;
-                newh_twin.next = nexth;
-                nexth.prev = newh_twin;
-                newh_twin.twin = newh;
-                newh.twin = newh_twin;
 
-                if (nexth.twin.incidentFace.outerComponent != null) {
-                    f = new Face(h_twin);
-                    addFace(f);
+                if ((i.x != h.next.origin.x || i.y != h.next.origin.y) && (i.x != h.origin.x || i.y != h.origin.y)) {
+                    HalfEdge nexth = new HalfEdge(i); // add halfedge above intersection point
+                    nexth.incidentFace = prev.incidentFace;
+                    nexth.next = h.next;
+                    h.next.prev = nexth;
+
+                    HalfEdge h_twin = new HalfEdge(i); // add twin halfedge to h (below intersection point)
+                    h_twin.next = h.twin.next;
+                    h.twin.next.prev = h_twin;
+                    h.twin.next = null; // to be set later
+                    h_twin.prev = null; // to be set later
+                    nexth.twin = h.twin;
+                    h.twin.twin = nexth;
+                    h.twin = h_twin;
+                    h_twin.twin = h;
+                    addEdge(nexth);
+                    addEdge(h_twin);
+
+                    newh.incidentFace = f;
+                    h.next = newh;
+                    newh.prev = h;
+                    newh.next = next;
+                    next.prev = newh;
+
+                    newh_twin.incidentFace = prev.incidentFace;
+                    newh_twin.prev = prev;
+                    prev.next = newh_twin;
+                    newh_twin.next = nexth;
+                    nexth.prev = newh_twin;
+                    newh_twin.twin = newh;
+                    newh.twin = newh_twin;
+
+                    if (nexth.twin.incidentFace.counter != 0) { // check if next is outer face
+                        f = new Face(h_twin, faces.size());
+                        addFace(f);
+                    } else {
+                        f = nexth.twin.incidentFace;
+                        nexth.twin.next = h_twin;
+                        h_twin.prev = nexth.twin;
+                    }
+
+                    prev = nexth.twin;
+                    h = h_twin;
                 } else {
-                    f = nexth.twin.incidentFace;
-                    nexth.twin.next = h_twin;
-                    h_twin.prev = nexth.twin;
-                }
-                h = h_twin;
-                prev = nexth.twin;
-                next = h;
 
-                addEdge(nexth);
-                addEdge(h_twin);
+                    newh_twin.prev = prev;
+                    newh_twin.incidentFace = prev.incidentFace;
+                    prev.next = newh_twin;
+                    newh_twin.next = h.next;
+                    h.next.prev = newh_twin;
+                    newh_twin.twin = newh;
+                    newh.twin = newh_twin;
+
+                    newh.incidentFace = f;
+                    h.next = newh;
+                    newh.prev = h;
+                    newh.next = next;
+                    next.prev = newh;
+
+                    prev = h;
+
+                    f = h.twin.incidentFace;
+                    h = h.twin;
+                }
+
+                next = h;
                 addEdge(newh);
                 addEdge(newh_twin);
             }
@@ -474,5 +533,13 @@ class DCEL {
             h.incidentFace = f;
             h = h.next;
         }
+
+        /*
+         * for (HalfEdge e : halfEdges) {
+         * System.out.println(e.origin.x + " " + e.origin.y);
+         * System.out.println(e.next.origin.x + " " + e.next.origin.y);
+         * System.out.println(e.incidentFace.counter);
+         * }
+         */
     }
 }
