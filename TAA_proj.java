@@ -311,19 +311,7 @@ class DCEL {
         HalfEdge h = null;
         Face f = null;
 
-        if (h_v == true) {
-            for (HalfEdge e : externalEdges) {
-                Vertex i = seg_intersect(origin, end, e.origin, e.next.origin);
-                //System.out.println("e: (" + e.origin.x + "," + e.origin.y);
-                //System.out.println("e next: (" + e.next.origin.x + "," + e.next.origin.y + ")");
-                if (i != null && i.x == origin.x && i.y == origin.y) {
-                    h = e;
-                    break;
-                }
-            }
-        }
-        else {
-            List<HalfEdge> intersectionsOg = new ArrayList<>();
+        List<HalfEdge> intersectionsOg = new ArrayList<>();
             List<HalfEdge> intersectionsEnd = new ArrayList<>();
             for (HalfEdge e : externalEdges) {
                 Vertex i = seg_intersect(origin, end, e.origin, e.next.origin);
@@ -336,6 +324,7 @@ class DCEL {
                     intersectionsEnd.add(e);
                 }
             }
+
             for (HalfEdge e1 : intersectionsOg) {
                 for (HalfEdge e2 : intersectionsEnd) {
                     if (e1.incidentFace.equals(e2.incidentFace)) {
@@ -344,6 +333,9 @@ class DCEL {
                     }
                 }
             }
+
+        if (h == null) {
+            h = intersectionsOg.get(0);
         }
         //System.out.println("h: " + h);
         //System.out.println("h: (" + h.origin.x + "," + h.origin.y + ")");
@@ -631,8 +623,8 @@ public class TAA_proj {
         Vertex[] vertices = new Vertex[8];
         vertices[0] = new Vertex(0.0, 0.0);
         vertices[1] = new Vertex(2.0, 0.0);
-        vertices[2] = new Vertex(2.0, 2.0);
-        vertices[3] = new Vertex(4.0, 2.0);
+        vertices[2] = new Vertex(2.0, 1.0);
+        vertices[3] = new Vertex(4.0, 1.0);
         vertices[4] = new Vertex(4.0, 4.0);
         vertices[5] = new Vertex(6.0, 4.0);
         vertices[6] = new Vertex(6.0, 6.0);
@@ -641,14 +633,14 @@ public class TAA_proj {
         DCEL dcel = new DCEL();
         dcel.createDCELFromPolygon(vertices);
 
-        Vertex origin1 = new Vertex(2.0, 2.0);
+        Vertex origin1 = new Vertex(2.0, 1.0);
         Vertex end1 = new Vertex(2.0, 6.0);
         Vertex origin2 = new Vertex(4.0, 4.0);
         Vertex end2 = new Vertex(4.0, 6.0);
         Vertex origin3 = new Vertex(4.0, 4.0);
         Vertex end3 = new Vertex(0.0, 4.0);
-        Vertex origin4 = new Vertex(2.0, 2.0);
-        Vertex end4 = new Vertex(0.0, 2.0);
+        Vertex origin4 = new Vertex(2.0, 1.0);
+        Vertex end4 = new Vertex(0.0, 1.0);
         Vertex end5 = new Vertex(2.0, 2.0);
         Vertex origin5 = new Vertex(0.0, 0.0);
         Vertex origin6 = new Vertex(2.0, 2.0);
@@ -666,7 +658,7 @@ public class TAA_proj {
         //System.out.println(i.x + " " + i.y);
 
         
-        /*for (Face f : dcel.faces) {
+        for (Face f : dcel.faces) {
             System.out.println("f" + f.counter);
             HalfEdge startEdge = f.outerComponent;
             HalfEdge e = startEdge;
@@ -676,7 +668,7 @@ public class TAA_proj {
                 e = e.next;
                 System.out.println(e.origin.x + " " + e.origin.y);
             }
-        }*/
+        }
     }
 
 
