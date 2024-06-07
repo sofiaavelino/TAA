@@ -1,11 +1,16 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.lang.Math;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.Comparator;
+import java.io.File; 
+import java.io.FileNotFoundException; 
+import java.util.Scanner;
 
 class Vertex {
     double x, y;
@@ -26,6 +31,19 @@ class Vertex {
         double dy = this.y - other.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Vertex vertex = (Vertex) obj;
+        return Double.compare(vertex.x, x) == 0 && Double.compare(vertex.y, y) == 0;
+    }
+
 }
 
 class VertexComparator implements Comparator<Vertex> {
@@ -653,54 +671,47 @@ class DCEL {
 
         //System.out.println("a");
         for (Vertex v : externalVertices) {
-            BigDecimal max_x = new BigDecimal(Math.max(guard.x,v.x));
-            BigDecimal min_x = new BigDecimal(Math.min(guard.x,v.x));
+            //BigDecimal max_x = new BigDecimal(Math.max(guard.x,v.x));
+            //BigDecimal min_x = new BigDecimal(Math.min(guard.x,v.x));
 
-            int decimalPlaces = 6;
+            //int decimalPlaces = 6;
 
-            max_x = max_x.setScale(decimalPlaces, RoundingMode.HALF_UP);
-            min_x = min_x.setScale(decimalPlaces, RoundingMode.HALF_UP);
+            //max_x = max_x.setScale(decimalPlaces, RoundingMode.HALF_UP);
+            //min_x = min_x.setScale(decimalPlaces, RoundingMode.HALF_UP);
 
             //System.out.println("b");
             List<Vertex> intersections = new ArrayList<>();
-            int iToVert = 0;
             if (v.x != guard.x || v.y != guard.y) {
                 System.out.println("v: " + v.x + " " + v.y);
-                //System.out.println("c");
-                HalfEdge edge = guardEdge.twin.next;
-                for (int j=0; j<externalEdges.size(); j++) {
-                    edge = edge.next;
+                HalfEdge start = null;
+                for (HalfEdge edge : externalEdges) {
                     Vertex i = line_intersect(guard, v, edge.origin, edge.next.origin);
-                    //System.out.println("e: " + edge.origin.x + " " + edge.origin.y);
-                    //System.out.println("enext: " + edge.next.origin.x + " " + edge.next.origin.y);
-                   /* if (i != null && (i.x <= max_x.doubleValue() && i.x >= min_x.doubleValue())) { //intersecao antes do vertice a avaliar
-                        iToVert++;
-                        //System.out.println("inot: " + i.x + " " + i.y);
-                        //System.out.println("what: " + min_x + " " + max_x);
-                    }*/
-                    if (i != null && ((guard.y > v.y && i.y < v.y) || (guard.y < v.y && i.y > v.y))) { //intersecao com uma parede
-                        if (guard.x != v.x) {
+                    if (i!=null && i.x == v.x && i.y ==v.y) {
+                        start = edge;
+                    }
+                    else if (i != null && ((guard.y > v.y && i.y < v.y) || (guard.y < v.y && i.y > v.y))) { //intersecao com uma parede
+                        if (guard.x != v.x) { //ignorar casos de particoes verticais (ja contabilizadas)
                             intersections.add(i);
                         }
-                        System.out.println("i: " + i.x + " " + i.y);
-                        //System.out.println("e: " + edge.origin.x + " " + edge.origin.y);
-                        //System.out.println("enext: " + edge.next.origin.x + " " + edge.next.origin.y);
+
                     }
                 }
-                int countIntersect = 0; // check whether line is inside or outside poligon (if inside has to intersect initial face >2 times)
-                HalfEdge next = guardEdge.next;
-                /*while (next != guardEdge) {
-                    if (line_intersect(guard, v, next.origin, next.next.origin) != null) {
-                        countIntersect++;
+                Set<double[]> numIntersect = new HashSet<double[]>(); 
+                HalfEdge edge = start.next;
+                while (edge != start) {
+                    Vertex i = line_intersect(guard, v, edge.origin, edge.next.origin);
+                    if (i != null) {
+                        double[] vCoord = {i.x,i.y};
+                        numIntersect.add(vCoord);
                     }
-                    next = next.next;
-                }*/
-                /*if (iToVert % 2 == 0 && intersections.size() != 0) {  
+                    edge = edge.next;
+                }
+                if (numIntersect.size() > 1) {  
                         intersections.add(v);
                         System.out.println("i: " + v.x + " " + v.y);
-                    }*/
-                intersections.add(v);
-                System.out.println("i: " + v.x + " " + v.y);
+                    }
+                //intersections.add(v);
+                //System.out.println("i: " + v.x + " " + v.y);
             }
             Collections.sort(intersections, new VertexComparator(guard));
             if (intersections.size() > 1 && intersections.get(0).x == intersections.get(1).x && intersections.get(0).y == intersections.get(1).y) intersections.remove(0);
@@ -715,12 +726,13 @@ class DCEL {
                 System.out.println("e");
                 boolean edgeExists = false;
 
-                for (HalfEdge e : halfEdges) { //check if partition already exists
+                for (HalfEdge e : halfEdges) { 
                     //System.out.println("e: " + e.origin.x + " " + e.origin.y + " " + e.next.origin.x + " " + e.next.origin.y);
-                    if (e.origin.x == i1.x && e.origin.y == i1.y && e.next.origin.x == i2.x && e.next.origin.y == i2.y) {
+                    if (e.origin.x == i2.x && e.origin.y == i2.y && e.next.origin.x == i1.x && e.next.origin.y == i1.y) { //check if partition already exists
                         edgeExists = true;
                         break;
                     }
+
                 }
 
 
@@ -789,33 +801,356 @@ class DCEL {
 }
 
 public class TAA_proj {
+    /* 
+    public static void computeHVPartitions(DCEL dcel) {
+        HalfEdge guardEdge = null;
+        for (HalfEdge e : dcel.externalEdges) {
+            if (e.origin.x == guard.x && e.origin.y == guard.y) {
+                guardEdge = e;
+                break;
+            }
+        }
+
+        List<Vertex> endIntersect = new ArrayList<>();
+
+        //System.out.println("a");
+        for (Vertex v : dcel.externalVertices) {
+            if (guard.x == v.x || guard.y == v.y) {
+                List<Vertex> intersections = new ArrayList<>();
+                if (v.x != guard.x || v.y != guard.y) {
+                    System.out.println("v: " + v.x + " " + v.y);
+                    HalfEdge start = null;
+                    for (HalfEdge edge : externalEdges) {
+                        Vertex i = line_intersect(guard, v, edge.origin, edge.next.origin);
+                        if (i!=null && i.x == v.x && i.y ==v.y) {
+                            start = edge;
+                        }
+                        else if (i != null && ((guard.y > v.y && i.y < v.y) || (guard.y < v.y && i.y > v.y))) { //intersecao com uma parede
+                            if (guard.x != v.x) { //ignorar casos de particoes verticais (ja contabilizadas)
+                                intersections.add(i);
+                            }
+
+                        }
+                    }
+                    Set<double[]> numIntersect = new HashSet<double[]>(); 
+                    HalfEdge edge = start.next;
+                    while (edge != start) {
+                        Vertex i = line_intersect(guard, v, edge.origin, edge.next.origin);
+                        if (i != null) {
+                            double[] vCoord = {i.x,i.y};
+                            numIntersect.add(vCoord);
+                        }
+                        edge = edge.next;
+                    }
+                    if (numIntersect.size() > 1) {  
+                            intersections.add(v);
+                            System.out.println("i: " + v.x + " " + v.y);
+                        }
+                    //intersections.add(v);
+                    //System.out.println("i: " + v.x + " " + v.y);
+                }
+                Collections.sort(intersections, new VertexComparator(guard));
+                if (intersections.size() > 1 && intersections.get(0).x == intersections.get(1).x && intersections.get(0).y == intersections.get(1).y) intersections.remove(0);
+                //System.out.println("d " + intersections.size());
+                for (Vertex vi : intersections) {
+                    System.out.println("a" + vi.x + " " + vi.y);
+                }
+
+                for (int i=0; i<intersections.size()/2; i++) {
+                    Vertex i1 = intersections.get(2*i);
+                    Vertex i2 = intersections.get(2*i+1);
+                    System.out.println("e");
+                    boolean edgeExists = false;
+
+                    for (HalfEdge e : halfEdges) { 
+                        //System.out.println("e: " + e.origin.x + " " + e.origin.y + " " + e.next.origin.x + " " + e.next.origin.y);
+                        if (e.origin.x == i2.x && e.origin.y == i2.y && e.next.origin.x == i1.x && e.next.origin.y == i1.y) { //check if partition already exists
+                            edgeExists = true;
+                            break;
+                        }
+
+                    }
+
+
+
+                    //falta condição para contabilizar só cortes depois do vertice corrente
+
+                    if ((i1.x != i2.x || i1.y != i2.y) && !edgeExists) {
+                        System.out.println("partition: " + i2.x + " " + i2.y + " " + i1.x + " " + i1.y);
+                        addPartition(i2, i1);
+                        endIntersect.add(i1);
+                    }
+                }
+            }
+        }
+    }*/
 
     public static void main(String[] args) {
-        Vertex[] vertices = new Vertex[12];
-        vertices[0] = new Vertex(0.0, 0.0);
-        vertices[1] = new Vertex(5.0, 0.0);
-        vertices[2] = new Vertex(5.0, 1.0);
-        vertices[3] = new Vertex(6.0, 1.0);
-        vertices[4] = new Vertex(6.0, 5.0);
-        vertices[5] = new Vertex(8.0, 5.0);
-        vertices[6] = new Vertex(8.0, 8.0);
-        vertices[7] = new Vertex(10.0, 8.0);
-        vertices[8] = new Vertex(10.0, 10.0);
-        vertices[9] = new Vertex(1.0, 10.0);
-        vertices[10] = new Vertex(1.0, 1.0);
-        vertices[11] = new Vertex(0.0, 1.0);
+        try {
+            File myObj = new File("exemplo_grid");
+            Scanner myReader = new Scanner(myObj);
+            int n = myReader.nextInt();
+            Vertex[] vertices = new Vertex[n];
+            List<Vertex[]> partitions = new ArrayList<>();
+            HashMap<Vertex,List<Vertex>> nextV = new HashMap<>();
 
-        DCEL dcel = new DCEL();
-        dcel.createDCELFromPolygon(vertices);
+            for (int i=0; i<n; i++) {
+                vertices[i] = new Vertex(myReader.nextDouble(), myReader.nextDouble());
+              }
 
-        Vertex origin1 = new Vertex(1.0, 0.0);
-        Vertex end1 = new Vertex(1.0, 1.0);
-        Vertex origin2 = new Vertex(5.0, 1.0);
-        Vertex end2 = new Vertex(5.0, 10.0);
-        Vertex origin3 = new Vertex(6.0, 5.0);
-        Vertex end3 = new Vertex(6.0, 10.0);
-        Vertex origin4 = new Vertex(8.0, 8.0);
-        Vertex end4 = new Vertex(8.0, 10.0);
+
+            DCEL dcel = new DCEL();
+            dcel.createDCELFromPolygon(vertices);
+
+            while (myReader.hasNextLine()) {
+                Double og_x = myReader.nextDouble();
+                if (og_x == null) break;
+                Double og_y = myReader.nextDouble();
+                Double end_x = myReader.nextDouble();
+                Double end_y = myReader.nextDouble();
+                Vertex origin = new Vertex(og_x, og_y);
+                Vertex end = new Vertex(end_x, end_y);
+
+                boolean exists = false;
+                for (Vertex v : nextV.keySet()) {
+                    if (v.equals(origin)) {
+                        List<Vertex> toV = nextV.get(v);
+                        toV.add(end);
+                        nextV.put(v, toV);
+                        //System.out.println("AAA" + toV.size());
+                        exists = true;
+                        break;
+                    }
+                }
+                if(exists == false) {
+                    //System.out.println("a");
+                    List<Vertex> toV = new ArrayList<>();
+                    toV.add(end);
+                    nextV.put(origin,toV);   
+                }
+            }
+
+
+            for  (Vertex v : nextV.keySet()) {
+                Vertex origin = v;
+
+                boolean ogInPoly = false;
+                for (HalfEdge e : dcel.externalEdges) { // check if end of segment is point in polygon
+                    for (Vertex next : nextV.get(v)) {
+                        Vertex i = dcel.line_intersect(origin, next, e.origin, e.next.origin);
+                        if (i!=null && i.equals(origin)) {
+                            ogInPoly = true;
+                            break;
+                        }
+                    }
+                }
+                if (ogInPoly == false) continue; // origin not in polygon edges
+
+                //if (partitions.get(originCoords) == null) continue; // origin not vertex from polygon
+                //if (origin.x == end.x && partitions.get(originCoords)[1] == 1) continue; // v partition already done for vertex
+                //if (origin.y == end.y && partitions.get(originCoords)[0] == 1) continue; // h partition already done for vertex
+
+                while (nextV.get(v).size() != 0){ 
+                    Vertex end = nextV.get(v).get(0);
+                    List<Vertex> vList = nextV.get(v);
+                    vList.remove(0); // remove end from list of origin's next vertices
+                    nextV.put(v,vList);
+
+                    boolean edgeExists = false;
+                    for (int i = 0; i<vertices.length; i++) { // check if edge already exists
+                        //Vertex intersect = dcel.line_intersect(origin, end, vertices[i], vertices[(i+1)%vertices.length]);
+
+                        if (origin.y == end.y && vertices[i].y == vertices[(i+1)%vertices.length].y && end.y == vertices[i].y) {
+                            if (Math.max(origin.x,end.x) <= Math.max(vertices[i].x,vertices[(i+1)%vertices.length].x) && Math.min(origin.x,end.x) >= Math.min(vertices[i].x,vertices[(i+1)%vertices.length].x)) {
+                                edgeExists = true;
+                                break;
+                            }
+                        }
+                        if (origin.x == end.x && vertices[i].x == vertices[(i+1)%vertices.length].x && end.x == vertices[i].x) {
+                            if (Math.max(origin.y,end.y) <= Math.max(vertices[i].y,vertices[(i+1)%vertices.length].y) && Math.min(origin.y,end.y) >= Math.min(vertices[i].y,vertices[(i+1)%vertices.length].y)) {
+                                edgeExists = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (edgeExists) continue;
+
+                    boolean reachEdge = false;
+                    for (HalfEdge e : dcel.externalEdges) { // check if end of segment is point in polygon edges
+                        Vertex i = dcel.line_intersect(origin, end, e.origin, e.next.origin);
+                        if (i!=null && i.equals(end)) {
+                            reachEdge = true;
+                            break;
+                        }
+                    }
+                    //boolean partitionDone = false;
+                    //System.out.println("a" + end.x + " " + end.y);
+                    //if (nextV.get(end) != null && nextV.get(end).size() != 0) {System.out.println(nextV.get(end).get(0));}
+                    Vertex next = null;
+                    while (!reachEdge) {
+                        List<Vertex> nextVs = null;
+                        for (Vertex ver : nextV.keySet()) {
+                            if (ver.equals(end)) {
+                                nextVs = nextV.get(ver);
+                            }
+                        }
+
+                        System.out.println(nextVs.size());
+
+                        for (Vertex ver: nextVs) {
+                            //System.out.println("V " + v.x + " " + v.y);
+                            //System.out.println(ver.x + " " + ver.y);
+                            //System.out.println("dist" + v.distanceTo(ver) + " " + (v.distanceTo(end) + 1 ));
+                            if (v.distanceTo(ver) == v.distanceTo(end) + 1) {
+                                next = ver;
+                                end = ver;
+                                //break;
+                            }
+                            //next = false;
+                        }
+
+                        if (next != end) break;
+
+                        /*if (nextVs == null || nextVs.size() == 0) {
+                            partitionDone = true;
+                            List<Vertex> ogNextV = nextV.get(v);
+                            ogNextV.remove(end);
+                            nextV.put(v, ogNextV);
+                            break;
+                        }
+                        Collections.sort(nextVs, new VertexComparator(origin));
+                        end = nextVs.get(0); // next vertex furthest away
+                        System.out.println("a" + end.x + " " + end.y);*/
+
+                        for (HalfEdge e : dcel.externalEdges) { // check if end of segment is point in polygon edges
+                            Vertex i = dcel.line_intersect(origin, end, e.origin, e.next.origin);
+                            if (i!=null && i.equals(end)) {
+                                reachEdge = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!reachEdge) {continue;}
+
+
+                    /*HalfEdge start = dcel.externalEdges.get(0).twin;
+                    if (start.origin.equals(origin) && start.next.origin.equals(end)) {
+                        edgeExists = true;
+                        break;
+                    }
+                    if (start.origin.equals(end) && start.next.origin.equals(origin)) {
+                        edgeExists = true;
+                        break;
+                    }
+                    HalfEdge e = start.next;
+                    while (!edgeExists && e != start) { // check if segment already exists
+                        System.out.println("e: " + e.origin.x + " " + e.origin.y + " " + e.next.origin.x + " " + e.next.origin.y);
+                        if (e.origin.equals(origin) && e.next.origin.equals(end)) {
+                            edgeExists = true;
+                            break;
+                        }
+                        if (e.origin.equals(end) && e.next.origin.equals(origin)) {
+                            edgeExists = true;
+                            break;
+                        }
+                        e = e.next;
+                    }*/
+
+                    boolean doneP = false;
+                    for (Vertex[] p : partitions) {
+                        if ((p[0].equals(origin) && p[1].equals(end)) || (p[0].equals(end) && p[1].equals(origin))) {
+                            doneP = true;
+                            break;
+                        }
+                    }
+                    
+                    if (doneP) continue;
+
+                    //if (!edgeExists) {
+                        System.out.println("Partition: " + origin.x + " " + origin.y + " " + end.x + " " + end.y);
+                        dcel.addPartition(origin,end);
+                        Vertex[] part = {origin, end};
+                        partitions.add(part);
+                    //}
+                } 
+
+
+
+
+
+                /* 
+                if (origin.y == end.y) { // horizontal partition
+                    Set<Vertex> rIntersect = new HashSet<Vertex>(); 
+                    Set<Vertex> lIntersect = new HashSet<Vertex>(); 
+                    for (HalfEdge e : dcel.externalEdges) {
+                        Vertex i = dcel.line_intersect(origin, end, e.origin, e.next.origin);
+                        if (i!=null && i.x > origin.x) { // intersect to the right of vertex
+                            rIntersect.add(i);
+                        }
+                        else if (i!=null && i.x < origin.x) { // intersect to the left of vertex
+                            lIntersect.add(i);
+                        }
+                    }
+                    rIntersect.add(origin);
+                    lIntersect.add(origin);
+
+                    dcel.Collections.sort(rIntersect, new VertexComparator(origin));
+                    dcel.Collections.sort(lIntersect, new VertexComparator(origin));
+
+
+                    boolean edgeExists = false;
+
+                    for (HalfEdge e : dcel.externalEdges) {
+                        if (e.origin.x == )
+                    }
+                }
+
+
+*/
+            }
+            myReader.close();
+
+            Vertex origin1 = new Vertex(3.0, 3.0);
+            Vertex end1 = new Vertex(3.0, 6.0);
+            Vertex origin2 = new Vertex(3.0, 3.0);
+            Vertex end2 = new Vertex(0.0, 3.0);
+
+            //dcel.addPartition(origin1, end1);
+            //dcel.addPartition(origin2, end2);
+
+            dcel.computeVisibility(vertices[0]);
+            System.out.println(vertices[0].x + " " + vertices[0].y);
+
+          } catch (FileNotFoundException e) {
+            System.out.println("File not found.");
+            e.printStackTrace();
+          }
+
+
+        //vertices[0] = new Vertex(0.0, 0.0);
+        //vertices[1] = new Vertex(3.0, 0.0);
+        //vertices[2] = new Vertex(3.0, 3.0);
+        //vertices[3] = new Vertex(6.0, 3.0);
+        //vertices[4] = new Vertex(6.0, 6.0);
+        //vertices[5] = new Vertex(0.0, 6.0);
+        //vertices[6] = new Vertex(6.0, 6.0);
+        //vertices[7] = new Vertex(0.0, 6.0);
+        //vertices[8] = new Vertex(10.0, 10.0);
+        //vertices[9] = new Vertex(1.0, 10.0);
+        //vertices[10] = new Vertex(1.0, 1.0);
+        //vertices[11] = new Vertex(0.0, 1.0);
+
+/* 
+        Vertex origin1 = new Vertex(3.0, 3.0);
+        Vertex end1 = new Vertex(3.0, 6.0);
+        Vertex origin2 = new Vertex(3.0, 3.0);
+        Vertex end2 = new Vertex(0.0, 3.0);
+        Vertex origin3 = new Vertex(2.0, 2.0);
+        Vertex end3 = new Vertex(2.0, 6.0);
+        Vertex origin4 = new Vertex(4.0, 4.0);
+        Vertex end4 = new Vertex(4.0, 6.0);
         Vertex origin5 = new Vertex(8.0, 8.0);
         Vertex end5 = new Vertex(1.0, 8.0);
         Vertex origin6 = new Vertex(6.0, 5.0);
@@ -836,12 +1171,12 @@ public class TAA_proj {
 
 
         dcel.addPartition(origin1, end1);
-        dcel.addPartition(origin2, end2);
-        dcel.addPartition(origin3, end3);
-        dcel.addPartition(origin4, end4);
-        dcel.addPartition(origin5, end5);
-        dcel.addPartition(origin6, end6);
-        dcel.addPartition(origin7, end7);
+        dcel.addPartition(origin2, end2);*/
+        //dcel.addPartition(origin3, end3);
+        //dcel.addPartition(origin4, end4);
+        //dcel.addPartition(origin5, end5);
+        //dcel.addPartition(origin6, end6);
+        //dcel.addPartition(origin7, end7);
         //dcel.addPartition(origin8, end8);
         //dcel.addPartition(origin9, end9);
         //dcel.addPartition(origin10, end10);
@@ -853,7 +1188,7 @@ public class TAA_proj {
             System.out.println("enext: " +e.next.origin.x + " " + e.next.origin.y);
         }*/
 
-        dcel.computeVisibility(vertices[7]);
+        //dcel.computeVisibility(vertices[5]);
         //dcel.iterateThroughEdges();
         //Vertex i = dcel.line_intersect(vertices[8], origin7, a, vertices[1]);
         //System.out.println(i.x + " " + i.y);
