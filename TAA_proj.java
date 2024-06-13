@@ -384,7 +384,7 @@ public class TAA_proj {
             Vertex guard = vertices[0];
 
             dcel.computeVisibility(guard);
-            dcel.mergeFaces(2, guard, myWriter);
+            dcel.mergeFaces(0, guard, myWriter);
             System.out.println("guard: " + guard.x + " " + guard.y);
             myWriter.close();
 
@@ -585,9 +585,9 @@ class Face implements Comparable<Face> {
     @Override
     public int compareTo(Face other) {
         if (this.centroid.y != other.centroid.y) {
-            return Double.compare(this.centroid.y, other.centroid.y);
+            return Double.compare(other.centroid.y, this.centroid.y);
         } else {
-            return Double.compare(this.centroid.x, other.centroid.x);
+            return Double.compare(other.centroid.x, this.centroid.x);
         }
     }
 }
@@ -1442,9 +1442,9 @@ class DCEL {
             return;
         }
 
-        Collections.sort(modemFaces, new FaceComparator()); // quero começar da face mais a cima (ou mais à direita em
-                                                            // caso de empate) para garantir que tenho pelo menos 1
-                                                            // fronteira com uma face de modem > k
+        Collections.sort(modemFaces); // quero começar da face mais a cima (ou mais à direita em
+                                      // caso de empate) para garantir que tenho pelo menos 1
+                                      // fronteira com uma face de modem > k
         int region = 0;
         List<Vertex> finalVisRegion = new ArrayList<>();
         List<Integer> finalRegionSizes = new ArrayList<>();
