@@ -107,7 +107,7 @@ public class TAA_proj {
      * }
      */
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         try {
             File myObj = new File("exemplo_grid");
             Scanner myReader = new Scanner(myObj);
@@ -117,6 +117,7 @@ public class TAA_proj {
             HashMap<Vertex, List<Vertex>> nextV = new HashMap<>();
             FileWriter myWriter = new FileWriter("polygon.txt");
             myWriter.write(n + "\n");
+
             for (int i = 0; i < n; i++) {
                 vertices[i] = new Vertex(myReader.nextDouble(), myReader.nextDouble());
                 myWriter.write(vertices[i].x + " " + vertices[i].y + "\n");
@@ -125,10 +126,8 @@ public class TAA_proj {
             DCEL dcel = new DCEL();
             dcel.createDCELFromPolygon(vertices);
 
-            while (myReader.hasNextLine()) {
+            while (myReader.hasNextDouble()) {
                 Double og_x = myReader.nextDouble();
-                if (og_x == null)
-                    break;
                 Double og_y = myReader.nextDouble();
                 Double end_x = myReader.nextDouble();
                 Double end_y = myReader.nextDouble();
@@ -241,11 +240,31 @@ public class TAA_proj {
                             // System.out.println(ver.x + " " + ver.y);
                             // System.out.println("dist" + v.distanceTo(ver) + " " + (v.distanceTo(end) + 1
                             // ));
-                            if (v.distanceTo(ver) == v.distanceTo(end) + 1) {
-                                next = ver;
-                                end = ver;
-                                // break;
+
+                            if (v.x == end.x && v.x == ver.x) {
+                                if ((end.y > v.y && ver.y > end.y) || (end.y < v.y && ver.y < end.y)) {
+                                    next = ver;
+                                    end = ver;
+                                    System.out.println("aqui: " + ver.x + " " + ver.y);
+                                    break;
+                                }
+                            } else if (v.y == end.y && v.y == ver.y) {
+                                if ((end.x > v.x && ver.x > end.x) || (end.x < v.x && ver.x < end.x)) {
+                                    next = ver;
+                                    end = ver;
+                                    System.out.println("aqui: " + ver.x + " " + ver.y);
+                                    break;
+                                }
                             }
+
+                            /*
+                             * if (v.distanceTo(ver) == v.distanceTo(end) + 1) {
+                             * System.out.println("aqui: " + ver.x + " " + ver.y);
+                             * next = ver;
+                             * end = ver;
+                             * //break;
+                             * }
+                             */
                             // next = false;
                         }
 
@@ -362,15 +381,35 @@ public class TAA_proj {
 
             // dcel.addPartition(origin1, end1);
             // dcel.addPartition(origin2, end2);
+            Vertex guard = vertices[0];
 
-            dcel.computeVisibility(vertices[0]);
-            System.out.println(vertices[0].x + " " + vertices[0].y);
-            List<Vertex> visRegion = dcel.mergeFaces(2);
-            myWriter.write(visRegion.size() + "\n");
-            for (Vertex cv : visRegion) {
-                myWriter.write(cv.x + " " + cv.y + "\n");
-            }
+            dcel.computeVisibility(guard);
+            dcel.mergeFaces(2, guard, myWriter);
+            System.out.println("guard: " + guard.x + " " + guard.y);
             myWriter.close();
+
+            /*
+             * for (Face f : dcel.faces) {
+             * int c = 0;
+             * System.out.println("f" + f.counter);
+             * HalfEdge startEdge = f.outerComponent;
+             * HalfEdge e = startEdge;
+             * System.out.println(e.origin.x + " " + e.origin.y);
+             * //System.out.println(e.next.origin.x + " " + e.next.origin.y);
+             * 
+             * while (!e.next.equals(startEdge)) {
+             * c++;
+             * e = e.next;
+             * System.out.println(e.origin.x + " " + e.origin.y + " " + e.next.origin.x +
+             * " " + e.next.origin.y);
+             * //System.out.println(startEdge.origin.x + " " + startEdge.origin.y + " " +
+             * startEdge.next.origin.x + " " + startEdge.next.origin.y);
+             * //if (c>10) break;
+             * }
+             * 
+             * }
+             */
+
         } catch (FileNotFoundException e) {
             System.out.println("File not found.");
             e.printStackTrace();
@@ -443,27 +482,6 @@ public class TAA_proj {
         // Vertex i = dcel.line_intersect(vertices[8], origin7, a, vertices[1]);
         // System.out.println(i.x + " " + i.y);
 
-        /*
-         * for (Face f : dcel.faces) {
-         * int c = 0;
-         * System.out.println("f" + f.counter);
-         * HalfEdge startEdge = f.outerComponent;
-         * HalfEdge e = startEdge;
-         * System.out.println(e.origin.x + " " + e.origin.y);
-         * //System.out.println(e.next.origin.x + " " + e.next.origin.y);
-         * 
-         * while (!e.next.equals(startEdge)) {
-         * c++;
-         * e = e.next;
-         * System.out.println(e.origin.x + " " + e.origin.y + " " + e.next.origin.x +
-         * " " + e.next.origin.y);
-         * //System.out.println(startEdge.origin.x + " " + startEdge.origin.y + " " +
-         * startEdge.next.origin.x + " " + startEdge.next.origin.y);
-         * //if (c>10) break;
-         * }
-         * 
-         * }
-         */
     }
 
 }
@@ -488,6 +506,8 @@ class Vertex {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
+    private static final double EPSILON = 1e-5;
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -497,7 +517,7 @@ class Vertex {
             return false;
         }
         Vertex vertex = (Vertex) obj;
-        return Double.compare(vertex.x, x) == 0 && Double.compare(vertex.y, y) == 0;
+        return Math.abs(vertex.x - x) < EPSILON && Math.abs(vertex.y - y) < EPSILON;
     }
 
 }
@@ -848,11 +868,40 @@ class DCEL {
     }
 
     public static boolean areCollinear(Vertex a, Vertex b, Vertex c) {
+        // Define a small tolerance value to account for floating-point inaccuracies
+        double epsilon = 1e-5;
+
         // Calculate the cross product of vectors formed by points (a, b) and (a, c)
         double crossProduct = (b.y - a.y) * (c.x - a.x) - (c.y - a.y) * (b.x - a.x);
 
-        // If cross product is zero, points are collinear
-        return crossProduct == 0;
+        // If the absolute value of the cross product is less than epsilon, points are
+        // considered collinear
+        return Math.abs(crossProduct) < epsilon;
+    }
+
+    public boolean segInPoly(Vertex start, Vertex end) { // check if segment is inside the polygon
+        Vertex center = new Vertex((start.x + end.x) / 2 + 0.00382, (start.y + end.y) / 2 + 0.00382); // added value
+                                                                                                      // just to make
+                                                                                                      // lesser odds of
+                                                                                                      // corresponding
+                                                                                                      // to HV partition
+                                                                                                      // line
+        Vertex inf = new Vertex(1000000, center.y);
+
+        int intersect = 0;
+        for (HalfEdge e : externalEdges) {
+            Vertex i = seg_intersect(center, inf, e.origin, e.next.origin);
+            if (i != null) {
+                if (!i.equals(e.next.origin)) { // para nao contabilizar 2 vezes (como inicio de um edge e fim de outro)
+                    intersect++;
+                }
+            }
+        }
+
+        if (intersect % 2 == 0) {
+            return false;
+        }
+        return true;
     }
 
     public void addPartition(Vertex origin, Vertex end) {
@@ -901,29 +950,52 @@ class DCEL {
         HalfEdge stop = null;
         List<HalfEdge> intersectionsOg = new ArrayList<>();
 
-        for (HalfEdge e : externalEdges) {
+        /*
+         * for (HalfEdge e : externalEdges) {
+         * Vertex i = seg_intersect(origin, end, e.origin, e.next.origin);
+         * if (i != null && i.x == origin.x && i.y == origin.y) {
+         * intersectionsOg.add(e);
+         * }
+         * }
+         */
+
+        /// *
+        for (HalfEdge e : halfEdges) {
+            if (e.incidentFace.counter == 0)
+                continue;
             Vertex i = seg_intersect(origin, end, e.origin, e.next.origin);
             if (i != null && i.x == origin.x && i.y == origin.y) {
                 intersectionsOg.add(e);
             }
-        }
+        } // */
 
         int max_intersect = 0;
         for (HalfEdge e : intersectionsOg) {
             int intersections = 1;
             HalfEdge start = e;
-            System.out.println(start.origin.x + " " + start.origin.y);
+            System.out.println("start: " + start.origin.x + " " + start.origin.y);
             while (e.next != start) {
                 e = e.next;
+                // System.out.println("next: " + e.origin.x + " " + e.origin.y);
                 if (seg_intersect(origin, end, e.origin, e.next.origin) != null) {
                     intersections++;
-                    System.out.println(e.origin.x + " " + e.origin.y);
+                    System.out.println(intersections);
                 }
             }
+            System.out.println("a" + start.twin.next.origin.x + " " + start.twin.next.origin.y + " "
+                    + start.twin.next.next.origin.x + " " + start.twin.next.next.origin.y);
+            if (h != null)
+                System.out.println("a" + h.twin.origin.x + " " + h.twin.origin.y + " " + h.twin.next.origin.x + " "
+                        + h.twin.next.origin.y);
             if (intersections > max_intersect) {
                 max_intersect = intersections;
                 h = start;
             }
+            /*
+             * else if (intersections == max_intersect && start.twin.next == h.twin) {
+             * h = start;
+             * }
+             */
 
         }
 
@@ -1016,12 +1088,12 @@ class DCEL {
             Vertex i = seg_intersect(origin, end, h.origin, h.next.origin);
             // System.out.println(h.origin.x + " " + h.origin.y);
             // System.out.println("a" + h.next.origin.x + " " + h.next.origin.y);
-
+            // System.out.println("where am I");
             if (i != null) {
                 if (i.x == origin.x && i.y == origin.y) {
-                    passOg = 1;
+                    passOg++;
                 }
-                // System.out.println("i: "+ i.x + " " + i.y);
+                System.out.println("i: " + i.x + " " + i.y);
                 intersection = i;
                 addVertex(i); // check if vertex doesnt exist yet
                 h.incidentFace = f;
@@ -1030,7 +1102,7 @@ class DCEL {
                 i.addLeaving(newh);
                 next.origin.addLeaving(newh_twin);
 
-                if ((i.x != h.next.origin.x || i.y != h.next.origin.y) && (i.x != h.origin.x || i.y != h.origin.y)) {
+                if (!i.equals(h.next.origin) && !i.equals(h.origin)) {
                     System.out.println("used 1");
                     HalfEdge nexth = new HalfEdge(i); // add halfedge above intersection point
                     i.addLeaving(nexth);
@@ -1069,7 +1141,7 @@ class DCEL {
                     newh_twin.twin = newh;
                     newh.twin = newh_twin;
 
-                    if (intersection.x != end.x || intersection.y != end.y) { // check if next is outer face
+                    if (!intersection.equals(end)) { // check if next is outer face
                         f = new Face(h_twin, faces.size());
                         addFace(f);
                     } else {
@@ -1085,10 +1157,10 @@ class DCEL {
                     prev = nexth.twin;
                     h = h_twin;
 
-                } else if (i.x != h.origin.x || i.y != h.origin.y) {
-                    // System.out.println("used 2");
+                } else if (!i.equals(h.origin)) {
+                    System.out.println("used 2");
 
-                    if (i.x != origin.x || i.y != origin.y || passOg == 0) {
+                    if (!i.equals(origin) || passOg == 0) {
                         newh_twin.prev = prev;
                         newh_twin.incidentFace = prev.incidentFace;
                         System.out.println("f" + prev.incidentFace.counter);
@@ -1122,29 +1194,24 @@ class DCEL {
                     prev = h.prev;
                 } else {
                     System.out.println("used 3");
-                    newh.incidentFace = f;
-                    f.outerComponent = newh;
-                    h.prev.next = newh;
-                    newh.prev = h.prev;
-                    newh.next = next;
-                    next.prev = newh;
+                    if (!i.equals(origin) || passOg <= 1) {
+                        newh.incidentFace = f;
+                        f.outerComponent = newh;
+                        h.prev.next = newh;
+                        newh.prev = h.prev;
+                        newh.next = next;
+                        next.prev = newh;
 
-                    newh_twin.prev = prev;
-                    newh_twin.incidentFace = prev.incidentFace;
-                    newh_twin.incidentFace.outerComponent = newh_twin;
-                    prev.next = newh_twin;
-                    newh_twin.next = h;
-                    h.prev = newh_twin;
-                    newh_twin.twin = newh;
-                    newh.twin = newh_twin;
-                    addEdge(newh);
-                    addEdge(newh_twin);
-
-                    h = h.prev.twin.prev.twin; // recheck if this makes sense for intersection at (internal) vertex
-
-                    if (i.x != end.x || i.y != end.y) {
-                        f = new Face(h, faces.size());
-                        addFace(f);
+                        newh_twin.prev = prev;
+                        newh_twin.incidentFace = prev.incidentFace;
+                        newh_twin.incidentFace.outerComponent = newh_twin;
+                        prev.next = newh_twin;
+                        newh_twin.next = h;
+                        h.prev = newh_twin;
+                        newh_twin.twin = newh;
+                        newh.twin = newh_twin;
+                        addEdge(newh);
+                        addEdge(newh_twin);
                     } else {
                         f = h.incidentFace;
                     }
@@ -1161,6 +1228,8 @@ class DCEL {
         }
     }
 
+    // System.out.println("done");
+
     public void computeVisibility(Vertex guard) {
         HalfEdge guardEdge = null;
         for (HalfEdge e : externalEdges) {
@@ -1171,6 +1240,7 @@ class DCEL {
         }
 
         List<Vertex> endIntersect = new ArrayList<>();
+        List<Vertex[]> partitions = new ArrayList<>();
 
         // System.out.println("a");
         for (Vertex v : externalVertices) {
@@ -1183,8 +1253,9 @@ class DCEL {
             // min_x = min_x.setScale(decimalPlaces, RoundingMode.HALF_UP);
 
             // System.out.println("b");
+
             List<Vertex> intersections = new ArrayList<>();
-            if (v.x != guard.x || v.y != guard.y) {
+            if (!v.equals(guard)) {
                 System.out.println("v: " + v.x + " " + v.y);
                 HalfEdge start = null;
                 for (HalfEdge edge : externalEdges) {
@@ -1194,10 +1265,15 @@ class DCEL {
                     } else if (i != null && ((guard.y > v.y && i.y < v.y) || (guard.y < v.y && i.y > v.y))) { // intersecao
                                                                                                               // com uma
                                                                                                               // parede
-                        if (guard.x != v.x) { // ignorar casos de particoes verticais (ja contabilizadas)
+                        // if (guard.x != v.x) { //ignorar casos de particoes verticais (ja
+                        // contabilizadas)
+                        intersections.add(i);
+                        // }
+
+                    } else if (i != null && guard.y == i.y) {
+                        if ((guard.x > v.x && i.x < v.x) || (guard.x < v.x && i.x > v.x)) {
                             intersections.add(i);
                         }
-
                     }
                 }
                 Set<double[]> numIntersect = new HashSet<double[]>();
@@ -1210,12 +1286,14 @@ class DCEL {
                     }
                     edge = edge.next;
                 }
-                if (numIntersect.size() > 1) {
-                    intersections.add(v);
-                    System.out.println("i: " + v.x + " " + v.y);
-                }
-                // intersections.add(v);
-                // System.out.println("i: " + v.x + " " + v.y);
+                /*
+                 * if (numIntersect.size() > 1) {
+                 * intersections.add(v);
+                 * System.out.println("i: " + v.x + " " + v.y);
+                 * }
+                 */
+                intersections.add(v);
+                System.out.println("i: " + v.x + " " + v.y);
             }
             Collections.sort(intersections, new VertexComparator(guard));
             if (intersections.size() > 1 && intersections.get(0).x == intersections.get(1).x
@@ -1232,22 +1310,61 @@ class DCEL {
                 System.out.println("e");
                 boolean edgeExists = false;
 
-                for (HalfEdge e : halfEdges) {
-                    // System.out.println("e: " + e.origin.x + " " + e.origin.y + " " +
-                    // e.next.origin.x + " " + e.next.origin.y);
-                    if (e.origin.x == i2.x && e.origin.y == i2.y && e.next.origin.x == i1.x
-                            && e.next.origin.y == i1.y) { // check if partition already exists
+                /*
+                 * for (HalfEdge e : halfEdges) {
+                 * System.out.println("e: " + e.origin.x + " " + e.origin.y + " " +
+                 * e.next.origin.x + " " + e.next.origin.y);
+                 * if (e.origin.x == i2.x && e.origin.y == i2.y && e.next.origin.x == i1.x &&
+                 * e.next.origin.y == i1.y) { //check if partition already exists
+                 * edgeExists = true;
+                 * break;
+                 * }
+                 * 
+                 * }
+                 */
+
+                for (Vertex[] vList : partitions) {
+                    if ((vList[0].equals(i1) && vList[1].equals(i2)) || (vList[0].equals(i2) && vList[1].equals(i1))) {
+                        edgeExists = true;
+                        break;
+                    }
+                }
+
+                if (v.x == guard.x || v.y == guard.y) { // vertical or horizontal partitions
+                    // ßSystem.out.println("AA");
+                    if (i1.equals(v) || i2.equals(v)) {
                         edgeExists = true;
                         break;
                     }
 
+                    for (HalfEdge e : halfEdges) {
+                        // System.out.println("e: " + e.origin.x + " " + e.origin.y + " " +
+                        // e.next.origin.x + " " + e.next.origin.y);
+                        if (e.origin.x == i2.x && e.origin.y == i2.y && e.next.origin.x == i1.x
+                                && e.next.origin.y == i1.y) { // check if partition already exists
+                            edgeExists = true;
+                            break;
+                        }
+
+                    }
+
+                    for (Vertex vert : externalVertices) {
+                        if (i2.equals(vert) || i1.equals(vert)) {
+                            edgeExists = true;
+                            break;
+                        }
+
+                    }
                 }
 
+                boolean edgeInPoly = segInPoly(i2, i1);
                 // falta condição para contabilizar só cortes depois do vertice corrente
 
-                if ((i1.x != i2.x || i1.y != i2.y) && !edgeExists) {
+                if ((i1.x != i2.x || i1.y != i2.y) && !edgeExists && edgeInPoly) {
                     System.out.println("partition: " + i2.x + " " + i2.y + " " + i1.x + " " + i1.y);
                     addPartition(i2, i1);
+                    Vertex[] p = { i1, i2 };
+                    partitions.add(p);
                     endIntersect.add(i1);
                 }
             }
@@ -1289,9 +1406,9 @@ class DCEL {
                 List<Vertex> intersections = new ArrayList<>();
                 for (HalfEdge e : externalEdges) {
                     Vertex i = seg_intersect(guard, c, e.origin, e.next.origin);
-                    if (i != null && (i.x != guard.x || i.y != guard.y) && (i.x != c.x || i.y != c.y)) {
+                    if (i != null && (i.x != guard.x || i.y != guard.y) && (i.x != c.x || i.y != c.y)
+                            && !intersections.contains(i)) {
                         intersections.add(i);
-                        // System.out.println("i1: " + i.x + " " + i.y);
                         // System.out.println("e: " + e.origin.x + " " + e.origin.y);
                         // System.out.println("enext: " + e.next.origin.x + " " + e.next.origin.y);
                         // System.out.println("e: " + c.x + " " + c.y);
@@ -1311,9 +1428,8 @@ class DCEL {
         } // */
     }
 
-    public List<Vertex> mergeFaces(int k) {
+    public void mergeFaces(int k, Vertex guard, FileWriter myWriter) throws Exception {
         List<Face> modemFaces = new ArrayList<>();
-        List<Vertex> visRegion = new ArrayList<>();
 
         for (Face f : faces) {
             if (f.modem <= k) {
@@ -1323,46 +1439,135 @@ class DCEL {
 
         if (modemFaces.size() == 0) {
             System.out.println("No regions have this visibility");
-            return null;
+            return;
         }
 
         Collections.sort(modemFaces, new FaceComparator()); // quero começar da face mais a cima (ou mais à direita em
                                                             // caso de empate) para garantir que tenho pelo menos 1
                                                             // fronteira com uma face de modem > k
         int region = 0;
-
+        List<Vertex> finalVisRegion = new ArrayList<>();
+        List<Integer> finalRegionSizes = new ArrayList<>();
         while (modemFaces.size() != 0) {
-            region++;
+            // System.out.println("SIZE: " + modemFaces.get(0).outerComponent.origin.x + " "
+            // + modemFaces.get(0).outerComponent.origin.y);
+            // System.out.println("SIZE: " + modemFaces.get(0).outerComponent.next.origin.x
+            // + " " + modemFaces.get(0).outerComponent.next.origin.y);
             Face startF = modemFaces.get(0);
             modemFaces.remove(0);
+            System.out.println("face: " + startF.counter);
+            // System.out.println("guard: " + guard.x + " " + guard.y);
 
             HalfEdge startE = startF.outerComponent;
+            // System.out.println("bb: " + startE.origin.x + " " + startE.origin.y);
+            HalfEdge edge = startE.next;
             boolean isBarrier = false;
-
-            while (isBarrier == false) {
-                if (startE.twin.incidentFace.modem > k) { // encontrar uma tal fronteira para iniciar o algoritmo
-                    isBarrier = true;
-                }
-                startE = startE.next;
+            if (startE.twin.incidentFace.modem > k) {
+                isBarrier = true;
             }
+
+            int c = 0;
+            while (isBarrier == false && edge != startE) {
+                if (edge.incidentFace != startF)
+                    break;
+                if (edge.twin.incidentFace.modem > k) { // encontrar uma tal fronteira para iniciar o algoritmo
+                    isBarrier = true;
+                    startE = edge;
+                    // System.out.println("a");
+                    break;
+                }
+                edge = edge.next;
+                c++;
+                // System.out.println("bb: " + startE.origin.x + " " + startE.origin.y);
+                // System.out.println("aa: " + edge.origin.x + " " + edge.origin.y);
+            }
+
+            if (isBarrier == false) {
+                continue; // se todos os edges forem adjacentes a uma face de modem <= k, descartar (já
+                          // contabilizado)
+            }
+
+            // System.out.println("b: " + startE.origin.x + " " + startE.origin.y + " " +
+            // startE.next.origin.x + " " + startE.next.origin.y);
+            // System.out.println("b: " + edge.twin.origin.x + " " + edge.twin.origin.y + "
+            // " + edge.twin.next.origin.x + " " + edge.twin.next.origin.y);
+            // System.out.println("b: " + edge.twin.next.origin.x + " " +
+            // edge.twin.next.origin.y + " " + edge.twin.next.next.origin.x + " " +
+            // edge.twin.next.next.origin.y);
+            // System.out.println("b: " + startE.incidentFace.counter);
+
+            // System.out.println("b: " + startE.origin.x + " " + startE.origin.y + " " +
+            // startE.next.origin.x + " " + startE.next.origin.y);
+            /*
+             * for (HalfEdge e : externalEdges) {
+             * if (e.origin == guard) {
+             * startE = e;
+             * }
+             * }
+             */
+
+            // if (startE.incidentFace != startF &&
+            // !modemFaces.contains(startE.incidentFace)) {continue;}
 
             HalfEdge e = startE.next;
 
             while (e != startE) {
                 if (e.twin.incidentFace.modem <= k) {
-                    e.prev.next = e.twin.next; // alterar apontadores de uma face par a outra (dar merge)
+                    modemFaces.remove(e.twin.incidentFace);
+                    // e.twin.incidentFace.modem = startF.modem;
+                    // System.out.println("delete: " + e.origin.x + " " + e.origin.y + " " +
+                    // e.next.origin.x + " " + e.next.origin.y);
+                    // System.out.println("next: " + e.twin.next.origin.x + " " +
+                    // e.twin.next.origin.y + " " + e.twin.next.next.origin.x + " " +
+                    // e.twin.next.next.origin.y);
+                    e.prev.next = e.twin.next; // alterar apontadores de uma face para a outra (dar merge)
+                    // modemFaces.remove(e.prev.incidentFace);
+                    e.prev.incidentFace = startF;
+                    // System.out.println("next of: " + e.prev.origin.x + " " + e.prev.origin.y + "
+                    // " + e.prev.next.origin.x + " " + e.prev.next.origin.y + " is " +
+                    // e.twin.next.origin.x + " " + e.twin.next.origin.y + " " +
+                    // e.twin.next.next.origin.x + " " + e.twin.next.next.origin.y);
                     e.twin.next.prev = e.prev;
+                    // modemFaces.remove(e.twin.next.incidentFace);
+                    e.twin.next.incidentFace = startF;
+                    // System.out.println("prev of: " + e.twin.next.origin.x + " " +
+                    // e.twin.next.origin.y + " " + e.twin.next.next.origin.x + " " +
+                    // e.twin.next.next.origin.y + " is " + e.prev.origin.x + " " + e.prev.origin.y
+                    // + " " + e.prev.next.origin.x + " " + e.prev.next.origin.y);
                     e.next.prev = e.twin.prev;
+                    // modemFaces.remove(e.next.incidentFace);
+                    e.next.incidentFace = startF;
+                    // System.out.println("prev of: " + e.next.origin.x + " " + e.next.origin.y + "
+                    // " + e.next.next.origin.x + " " + e.next.next.origin.y + " is " +
+                    // e.twin.prev.origin.x + " " + e.twin.prev.origin.y + " " +
+                    // e.twin.prev.next.origin.x + " " + e.twin.prev.next.origin.y);
                     e.twin.prev.next = e.next;
+                    // modemFaces.remove(e.twin.prev.incidentFace);
+                    e.twin.prev.incidentFace = startF;
+                    // System.out.println("next of: " + e.twin.prev.origin.x + " " +
+                    // e.twin.prev.origin.y + " " + e.twin.prev.next.origin.x + " " +
+                    // e.twin.prev.next.origin.y + " is " + e.next.origin.x + " " + e.next.origin.y
+                    // + " " + e.next.next.origin.x + " " + e.next.origin.y);
+
+                    HalfEdge rem = e;
+                    // System.out.println(rem.origin.x + " " + rem.origin.y + " " +
+                    // rem.next.origin.x + " " + rem.next.origin.y);
                     e = e.twin.next;
-                    halfEdges.remove(e.prev.twin); // apagar edges comuns
-                    halfEdges.remove(e.prev);
-                    modemFaces.remove(e.incidentFace);
+                    // halfEdges.remove(e.prev.twin); // apagar edges comuns
+                    // halfEdges.remove(e.prev);
+                    halfEdges.remove(rem.twin); // apagar edges comuns
+                    halfEdges.remove(rem);
                 } else {
                     e = e.next;
                 }
-                e.incidentFace = e.prev.incidentFace;
+                modemFaces.remove(e.incidentFace);
+                e.incidentFace = startF;
+                // System.out.println("this: " + e.origin.x + " " + e.origin.y + " " +
+                // e.next.origin.x + " " + e.next.origin.y);
+                // System.out.println(e.incidentFace.counter);
             }
+
+            List<Vertex> visRegion = new ArrayList<>();
 
             visRegion.add(startE.origin);
             // System.out.println("(" + startE.origin.x + "," + startE.origin.y + ") ");
@@ -1381,14 +1586,63 @@ class DCEL {
                     visRegion.get(visRegion.size() - 1), visRegion.get(0))) {
                 visRegion.remove(visRegion.get(visRegion.size() - 1));
             }
+            if (visRegion.size() >= 2
+                    && areCollinear(visRegion.get(1), visRegion.get(0), visRegion.get(visRegion.size() - 1))) {
+                visRegion.remove(0);
+            }
 
+            int startIndex = 0;
+            Vertex startV = visRegion.get(0);
+            for (int i = 0; i < visRegion.size(); i++) { // just to start the ccw order from the highest leftmost vertex
+                                                         // of the region
+                if (visRegion.get(i).x < startV.x) {
+                    startIndex = i;
+                    startV = visRegion.get(i);
+                } else if (visRegion.get(i).x == startV.x && visRegion.get(i).y > startV.y) {
+                    startIndex = i;
+                    startV = visRegion.get(i);
+                }
+            }
+            finalRegionSizes.add(visRegion.size());
+            region++;
             System.out.println("Region " + region + ": ");
-            for (Vertex v : visRegion) {
+            for (int i = 0; i < visRegion.size(); i++) {
+                Vertex v = visRegion.get((startIndex + i) % visRegion.size());
                 System.out.println("(" + v.x + "," + v.y + ") ");
+                finalVisRegion.add(v);
             }
             System.out.println();
+            // break;
+
+            /*
+             * for (Face f : faces) {
+             * int c = 0;
+             * System.out.println("f" + f.counter);
+             * HalfEdge startEdge = f.outerComponent;
+             * HalfEdge e2 = startEdge;
+             * System.out.println(e2.origin.x + " " + e2.origin.y);
+             * //System.out.println(e.next.origin.x + " " + e.next.origin.y);
+             * 
+             * while (!e2.next.equals(startEdge)) {
+             * c++;
+             * e2 = e2.next;
+             * System.out.println(e2.origin.x + " " + e2.origin.y + " " + e2.next.origin.x +
+             * " " + e2.next.origin.y);
+             * //System.out.println(startEdge.origin.x + " " + startEdge.origin.y + " " +
+             * startEdge.next.origin.x + " " + startEdge.next.origin.y);
+             * //if (c>20) break;
+             * }
+             * 
+             * }
+             */
 
         }
-        return visRegion;
+        myWriter.write(finalRegionSizes.size() + "\n");
+        for (int i : finalRegionSizes) {
+            myWriter.write(i + "\n");
+            for (int j = 0; j < i; j++) {
+                myWriter.write(finalVisRegion.get(j).x + " " + finalVisRegion.get(j).y + "\n");
+            }
+        }
     }
 }
