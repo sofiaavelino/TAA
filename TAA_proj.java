@@ -116,13 +116,21 @@ public class TAA_proj {
             List<Vertex[]> partitions = new ArrayList<>();
             HashMap<Vertex, List<Vertex>> nextV = new HashMap<>();
             FileWriter myWriter = new FileWriter("polygon.txt");
-            myWriter.write(n + "\n");
 
             for (int i = 0; i < n; i++) {
                 vertices[i] = new Vertex(myReader.nextDouble(), myReader.nextDouble());
-                myWriter.write(vertices[i].x + " " + vertices[i].y + "\n");
             }
 
+            // ------------------------------------------------------------------------------
+            Vertex guard = vertices[5];
+            int k_modem = 0;
+            // ------------------------------------------------------------------------------
+            myWriter.write(guard.x + " " + guard.y + "\n");
+            myWriter.write(k_modem + "\n");
+            myWriter.write(n + "\n");
+            for (int i = 0; i < n; i++) {
+                myWriter.write(vertices[i].x + " " + vertices[i].y + "\n");
+            }
             DCEL dcel = new DCEL();
             dcel.createDCELFromPolygon(vertices);
 
@@ -381,10 +389,9 @@ public class TAA_proj {
 
             // dcel.addPartition(origin1, end1);
             // dcel.addPartition(origin2, end2);
-            Vertex guard = vertices[0];
 
             dcel.computeVisibility(guard);
-            dcel.mergeFaces(0, guard, myWriter);
+            dcel.mergeFaces(k_modem, guard, myWriter);
             System.out.println("guard: " + guard.x + " " + guard.y);
             myWriter.close();
 
@@ -409,6 +416,7 @@ public class TAA_proj {
              * 
              * }
              */
+            executePythonScript("plot_polygons.py");
 
         } catch (FileNotFoundException e) {
             System.out.println("File not found.");
@@ -482,6 +490,19 @@ public class TAA_proj {
         // Vertex i = dcel.line_intersect(vertices[8], origin7, a, vertices[1]);
         // System.out.println(i.x + " " + i.y);
 
+    }
+
+    public static void executePythonScript(String scriptPath) throws IOException {
+        ProcessBuilder processBuilder = new ProcessBuilder("python", scriptPath);
+        processBuilder.inheritIO();
+        Process process = processBuilder.start();
+
+        try {
+            int exitCode = process.waitFor();
+            System.out.println("Python script exited with code: " + exitCode);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 }
