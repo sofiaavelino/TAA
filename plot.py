@@ -27,6 +27,19 @@ def read_polygons(filename):
     
     return (point_x, point_y), k, polygon1, additional_polygons
 
+def get_bounds(polygon1, additional_polygons):
+    all_points = polygon1[:]
+    for polygon in additional_polygons:
+        all_points.extend(polygon)
+    
+    x_coords = [p[0] for p in all_points]
+    y_coords = [p[1] for p in all_points]
+    
+    min_x, max_x = min(x_coords), max(x_coords)
+    min_y, max_y = min(y_coords), max(y_coords)
+    
+    return min_x, max_x, min_y, max_y
+
 def plot_polygons(point, k, polygon1, additional_polygons):
     plt.figure()
     
@@ -40,14 +53,19 @@ def plot_polygons(point, k, polygon1, additional_polygons):
         x, y = list(x) + [x[0]], list(y) + [y[0]]
         plt.plot(x, y, 'r-')
         plt.fill(x, y, 'red', alpha=0.5)
+        
     
-    plt.plot([], [], 'r-', label=f'Visibility (k={k})')
-    plt.plot(point[0], point[1], 'bo', label='Guard', markersize=10)
-    plt.title(f'Plot of the visibility zone with k={k}')
+    plt.plot([], [], 'r-', label = 'Visibility (k={})'.format(k))
+    plt.plot(point[0], point[1], 'bo', label='Guard')
+    plt.title('Plot of the visibility zone with k={}'.format(k))
     
-    plt.legend()
+    min_x, max_x, min_y, max_y = get_bounds(polygon1, additional_polygons)
+    plt.xlim(min_x - 2, max_x + 2)
+    plt.ylim(min_y - 2, max_y + 2)  
+    
+    plt.legend(fontsize='small')
     plt.show()
 
-filename = 'polygons.txt'
+filename = 'polygon.txt'
 point, k, polygon1, additional_polygons = read_polygons(filename)
 plot_polygons(point, k, polygon1, additional_polygons)
