@@ -53,8 +53,6 @@ Clone the repository:
 git clone https://github.com/sofiaavelino/TAA.git
 cd TAA
 
-
-
 File: TAA_proj.java
 Compile: javac TAA_proj.java
 Run: java TAA_proj
