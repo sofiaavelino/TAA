@@ -1,4 +1,4 @@
-# TAA — k-Modem Illumination in Orthogonal Polygons
+# k-Modem Illumination in Orthogonal Polygons
 
 This project implements an algorithm to determine the region of an orthogonal polygon that is *illuminated* by a **k-modem** — a wireless modem capable of transmitting a signal through up to *k* walls along a straight line. It models wireless signal coverage in complex indoor environments by combining geometric visibility with wall-penetration constraints.
 
