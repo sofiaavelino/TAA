@@ -92,8 +92,8 @@ public class TAA_proj {
             }
             System.out.println();
 
-            int x = scanner.nextInt();
-            int y = scanner.nextInt();
+            int x = (int) scanner.nextFloat();
+            int y = (int) scanner.nextFloat();
             int k_modem = scanner.nextInt();
             scanner.nextLine();
 
