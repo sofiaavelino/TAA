@@ -1,5 +1,123 @@
 # TAA — k-Modem Illumination in Orthogonal Polygons
 
+This project implements an algorithm to compute the region of an orthogonal polygon that is *illuminated* by a **k-modem** — a wireless modem capable of transmitting a signal through up to *k* walls along a straight segment.  
+It models wireless signal propagation inside buildings using geometric visibility and wall-crossing constraints.
+
+---
+
+## 📡 Visual Overview
+
+Below is a high-level illustration of the problem your algorithm solves:
+
+<p align="center">
+  <svg width="420" height="260" xmlns="http://www.w3.org/2000/svg">
+    <!-- Polygon outline -->
+    <rect x="40" y="40" width="320" height="180" fill="none" stroke="black" stroke-width="2"/>
+    
+    <!-- Interior orthogonal cuts -->
+    <line x1="150" y1="40" x2="150" y2="220" stroke="#888" stroke-dasharray="4"/>
+    <line x1="40" y1="130" x2="360" y2="130" stroke="#888" stroke-dasharray="4"/>
+
+    <!-- Modem -->
+    <circle cx="90" cy="90" r="6" fill="#f45"/>
+    <text x="80" y="80" font-size="12">k-modem</text>
+
+    <!-- Visibility rays -->
+    <line x1="90" y1="90" x2="360" y2="130" stroke="#f88" stroke-width="1.5"/>
+    <line x1="90" y1="90" x2="150" y2="40" stroke="#f88" stroke-width="1.5"/>
+    <line x1="90" y1="90" x2="150" y2="220" stroke="#f88" stroke-width="1.5"/>
+
+    <!-- Illuminated region shading -->
+    <polygon points="90,90 150,90 150,130 90,130" fill="#ffb3b3" opacity="0.5"/>
+    <text x="95" y="115" font-size="12">Illuminated Region</text>
+  </svg>
+</p>
+
+This diagram shows:
+- an orthogonal polygon,
+- the modem at a vertex,
+- rays cast toward vertices,
+- DCEL partitions,
+- regions illuminated with up to *k* wall crossings.
+
+---
+
+## ✨ Features
+
+- Computes illuminated regions inside orthogonal polygons  
+- Supports k-modems (visibility through up to *k* walls)  
+- Uses **DCEL** for dynamic polygon partitioning  
+- Fully implemented in **Java**  
+- Outputs regions in counter-clockwise order  
+
+---
+
+## 🧠 Core Concepts (Succinct)
+
+### **k-Modem Visibility**
+A point is illuminated if it can be connected to the modem by a straight segment crossing ≤ *k* walls.
+
+### **DCEL (Doubly Connected Edge List)**
+Used to maintain:
+- vertices  
+- edges (with next/prev/twin)  
+- faces  
+- interior/exterior adjacency  
+
+Perfect for polygon partitioning after ray-casting.
+
+---
+
+## 🔍 Algorithm Steps (High-Level)
+
+1. **Ray Casting**  
+   Cast rays from the modem to all vertices and compute intersections with the polygon boundary.
+
+2. **Polygon Partitioning**  
+   Insert new edges between sorted intersection points, updating the DCEL.
+
+3. **Face Visibility Evaluation**  
+   For each face, count wall crossings on the segment connecting the modem to the face centroid.
+
+4. **Region Extraction**  
+   Merge all faces with wall-crossing count ≤ *k* and output their combined boundary.
+
+---
+
+## 🛠️ Implementation
+
+- Language: **Java**
+- Custom geometric primitives & ray-intersection logic  
+- Full DCEL implementation (vertices, edges, faces, twins, adjacency)
+- Detailed explanation in `Report_TAA.pdf`
+
+---
+
+## 📄 Full Report
+
+See the complete algorithm design, theory, and results here:
+
+👉 **[Report_TAA.pdf](Report_TAA.pdf)**
+
+---
+
+## 🚀 Running the Project
+
+```bash
+git clone https://github.com/sofiaavelino/TAA.git
+cd TAA
+
+# Compile
+javac src/*.java
+
+# Run
+java src/Main
+
+
+
+
+# TAA — k-Modem Illumination in Orthogonal Polygons
+
 This project implements an algorithm to determine the region of an orthogonal polygon that is *illuminated* by a **k-modem** — a wireless modem capable of transmitting a signal through up to *k* walls along a straight line. It models wireless signal coverage in complex indoor environments by combining geometric visibility with wall-penetration constraints.
 
 ## ✨ Features
