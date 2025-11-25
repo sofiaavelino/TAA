@@ -1,3 +1,60 @@
+# TAA — k-Modem Illumination in Orthogonal Polygons
+
+This project implements an algorithm to determine the region of an orthogonal polygon that is *illuminated* by a **k-modem** — a wireless modem capable of transmitting a signal through up to *k* walls along a straight line. It models wireless signal coverage in complex indoor environments by combining geometric visibility with wall-penetration constraints.
+
+## ✨ Features
+- Compute the illuminated region of a polygon given a k-modem location
+- Account for both physical distance and wall penetration
+- Efficient polygon partitioning using a **Doubly Connected Edge List (DCEL)**
+- Outputs the vertices delimiting illuminated regions in counter-clockwise order
+
+## 🧠 Data Structures
+The algorithm relies on the following key structures:
+
+- **Vertex**: Stores `(x, y)` coordinates  
+- **Edge**: Includes origin, next, previous, twin, and incident face  
+- **Face**: Centroid, ID, modem visibility, and outer component  
+- **DCEL**: Contains lists of vertices, edges, external edges, and faces  
+
+The DCEL allows efficient updates as rays cast from the modem introduce new polygon partitions.
+
+## 🔍 Algorithm Overview
+1. **Ray Casting from the Modem**  
+   - Cast rays from the modem to every vertex in the polygon  
+   - Record intersections with polygon edges
+
+2. **Partitioning the Polygon**  
+   - Insert new edges connecting intersection points  
+   - Update DCEL to form new faces
+
+3. **Visibility Computation**  
+   - For each face, count wall crossings along the segment from the modem to the centroid  
+   - Determine if the face is visible (≤ *k* wall penetrations)
+
+4. **Region Extraction**  
+   - Merge visible faces  
+   - Return vertices of the illuminated region(s) in counter-clockwise order
+
+## 🛠️ Implementation
+- Language: **Java**  
+- Geometric operations and DCEL manipulation implemented from scratch  
+- Input: Polygon vertices in counter-clockwise order  
+- Output: Illuminated regions and visualizations
+
+## 📄 Report
+A full technical write-up of the theory, algorithm design, data structures, and results is provided in:
+
+[**Report_TAA.pdf**](Report_TAA.pdf)
+
+## 🚀 Usage
+Clone the repository:
+
+```bash
+git clone https://github.com/sofiaavelino/TAA.git
+cd TAA
+
+
+
 File: TAA_proj.java
 Compile: javac TAA_proj.java
 Run: java TAA_proj
