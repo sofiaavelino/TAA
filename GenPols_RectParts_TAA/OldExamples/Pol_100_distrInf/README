@@ -1,0 +1,21 @@
+----------------------------------------------------------------------------
+grid_pol_100      grid_pol_100.tex  hp_pol_100.pdf  pol_100      pol_100.tex
+grid_pol_100.pdf  hp_pol_100        hp_pol_100.tex  pol_100.pdf
+---------------------------------------------------------------------------
+
+ pol_100 
+   permutomino with n=100 in CCW order and coordinates in 
+   system  (X, -Y)
+
+pol_100.tex  pol_100.pdf
+    image LaTex src and PDF
+    (as if coordinates were in canonical system -- H-flipped image)
+
+grid_pol_100
+     output from gridnew.c
+        N
+        Sequence of vertices of the polygon
+        Sequence of half-edges of the grid partition  X Y Xf Yf
+
+hp_pol_100   output from hpartition.c
+     (similar format)

@@ -57,13 +57,15 @@ def plot_polygons(point, k, polygon1, additional_polygons):
     
     plt.plot([], [], 'r-', label = 'Visibility (k={})'.format(k))
     plt.plot(point[0], point[1], 'bo', label='Guard')
-    plt.title('Plot of the visibility zone with k={}'.format(k))
+    plt.title('Plot of the visibility zone with k={}'.format(k), y=1.05)
     
     min_x, max_x, min_y, max_y = get_bounds(polygon1, additional_polygons)
     plt.xlim(min_x - 2, max_x + 2)
     plt.ylim(min_y - 2, max_y + 2)  
     
-    plt.legend(fontsize='small')
+    #plt.legend(fontsize='small')
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
+          ncol=3, fancybox=True, shadow=True, fontsize='small')
     plt.show()
 
 filename = 'polygon.txt'

@@ -1,0 +1,150 @@
+----------------------------------------------
+swerc_inflate_cut.c
+
+  creates permutominoes with n-vertices defined in CCW order
+  coordinates x and y from 0 to n/2-1
+
+  ** w.r.t. CANONICAL cartesian system if STANDARD_Y_AXIS active 
+
+  ** w.r.t  non canonical system (y-axis reversed) if SYM_STANDARD_Y_AXIS active 
+
+
+  Input data:
+    K n
+    where K is the number of instances to be created
+
+  Ouput data:
+    K lines, each one defines a permutomino with n vertices
+    Each permutomino is given by  n  v_1 ... v_n  in CCW order
+
+
+   -----------------
+   REMARK:
+   -------------------
+       if SYM_STANDARD_Y_AXIS is active but we take it as if 
+       the coordinates were in the canonical cartesian system, 
+       the sequence of vertices of the polygon will be in CW order,
+       wrt the canonical system.
+
+--------------------------------------------------
+
+draw_orthopol.c
+
+   creates image to be processed by LaTeX 
+   assumes coordinates given wrt canonical referential system
+    ((1,0),(0,1)), but can be used to produce a (flipped) image
+   even with coordinates given in wrt ((1,0),(-1,0))
+
+   input data:
+     n  v_1  v_2  ... v_n
+     given in CW order  
+
+   REMARK: we can use swerc_inflate_cut.c with SYM_STANDARD_Y_AXIS
+   to create the polygon
+
+----------------------------------------------------
+expconvert.c
+
+ receives a permutomino in CW  and shifts the edges by inserting
+ new gridlines.
+
+    This program allows us to create rectilinear polygons that
+    are not permutominoes 
+
+____________________________________________________________________________
+____________________________________________________________________________
+
+gridnew.c   
+
+  computes H/V partition
+
+  applies sweeping to compute the rectilinear partition of an orthogonal
+  polygon without collinear edges
+
+  ASSUMES:  sequence of vertices in CCW order and 
+            REF AXES  ((1,0), (0,-1))   NOT CANONICAL
+                 ------>
+                 |
+                 |
+		 V
+
+  
+
+
+----------------------------------------------------
+
+hpartition.c -- computes H-partition
+
+   assumes sequence of vertices in CCW order and 
+            REF AXES  ((1,0), (0,-1))   NOT CANONICAL
+                 ------>
+                 |
+                 |
+		 V
+
+
+---------------------------------------------------------
+
+draw_orthopol.c   
+ 
+Sequence of vertices of the polygon 
+
+(picture as if coordinates were given in canonical ref)
+
+-----------------------------------
+
+draw_partition.c
+
+Sequence of vertices of the polygon 
+half-edges of the partition   X Y  Xf Yf
+
+(picture as if coordinates were given in canonical ref)
+
+
+_____________________________________________________________________
+
+The programs in the archive were written to run independently:
+
+$ gcc -o swerc_inflate_cut swerc_inflate_cut.c
+$ gcc -o expconvert expconvert.c
+
+
+$ gcc -o distr_Inflate_sym distr_Inflate.c
+
+$ gcc -o gridnew gridnew.c
+$ gcc -o hpartition hpartition.c
+
+$ gcc -o draw_orthopol draw_orthopol.c 
+$ gcc -o draw_partition draw_partition.c
+
+
+-----------------
+
+Example of usage:
+
+$ swerc_inflate_cut > exemplo
+1 12
+
+(to create 1 permutomino with n=12)
+
+$ draw_orthopol < exemplo > exemplo.tex
+  
+$ pdflatex exemplo.tex
+
+$ evince exemplo.pdf &
+( or acroread exemplo.pdf & )
+
+$ expconvert  < exemplo > exemplo_transf
+
+$ draw_orthopol < exemplo_transf > exemplo_transf.tex
+
+$ pdflatex exemplo_transf.tex  & 
+
+$ gridnew  < exemplo_transf > exemplo_transf_grid
+
+$ hpartition  < exemplo_transf > exemplo_transf_hp
+
+$ draw_partition < exemplo_transf_grid > exemplo_transf_grid.tex
+
+$ draw_partition < exemplo_transf_hp > exemplo_transf_hp.tex
+
