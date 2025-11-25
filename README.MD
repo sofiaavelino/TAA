@@ -74,7 +74,7 @@ If you press 1:
 	- If you've generated a polygon previously by pressing 0 in this step and wish to use it again with a new guard or vertex insert the name 'exemplo_grid' here, which contains the file created with the information for that polygon
 
 
-"Please select a guard vertex from the list below and the visibility level you desire. (use format 'x y k'):"
+"Please select a guard vertex from the list below and the visibility level you desire. (use format 'x y k', with x,y, and z integers):"
 Choose a vertex from the presented ones and insert its coordinates x and y followed by the visibility value restriction in the order x y z
 
 The python file will run automatically from the java file.
